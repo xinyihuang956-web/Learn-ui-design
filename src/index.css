@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+
+  --color-navy-900: #072452;
+  --color-navy-800: #0B2F66;
+  --color-navy-700: #123E7A;
+
+  --color-page-bg: #F7F9FC;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F9FBFF;
+  --color-surface-muted: #F1F5F9;
+
+  --color-border-light: #E6ECF3;
+  --color-border-medium: #D7E0EA;
+  --color-divider: #EEF2F7;
+
+  --color-text-primary: #0A254F;
+  --color-text-secondary: #48607A;
+  --color-text-muted: #7B8DA5;
+  --color-text-disabled: #B4C0D0;
+
+  --color-status-blue-bg: #EAF2FF;
+  --color-status-blue-text: #2563EB;
+  --color-status-green-bg: #EAF8F0;
+  --color-status-green-text: #1F9D55;
+  --color-status-orange-bg: #FFF3E6;
+  --color-status-orange-text: #F97316;
+  --color-status-red-bg: #FFECEC;
+  --color-status-red-text: #EF4444;
+  --color-status-purple-bg: #F3E8FF;
+  --color-status-purple-text: #7C3AED;
+
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.04);
+  --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.03);
+  --shadow-nav-active: 0 8px 20px rgba(7, 36, 82, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  background-color: #F7F9FC;
+  color: #0A254F;
+  -webkit-font-smoothing: antialiased;
+}
