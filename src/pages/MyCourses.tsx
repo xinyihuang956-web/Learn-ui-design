@@ -14,6 +14,7 @@ import {
   Calendar,
 } from 'lucide-react'
 import StatusPill from '../components/StatusPill'
+import { getCourseImage } from '../data/courseImages'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,8 +34,6 @@ type Course = {
   next: NextItem
   progress: number
   accent: string
-  thumbFrom: string
-  thumbTo: string
   favourited: boolean
   semester: 'current' | 'completed'
   detailPath?: string
@@ -53,8 +52,6 @@ const allCourses: Course[] = [
     next: { label: 'Next class: Today', time: '10:00 AM', type: 'Class' },
     progress: 72,
     accent: '#2563EB',
-    thumbFrom: '#1D4ED8',
-    thumbTo: '#0EA5E9',
     favourited: true,
     semester: 'current',
     detailPath: '/courses/biol08019',
@@ -69,8 +66,6 @@ const allCourses: Course[] = [
     next: { label: 'Next class: Today', time: '11:00 AM', type: 'Seminar' },
     progress: 58,
     accent: '#7C3AED',
-    thumbFrom: '#5B21B6',
-    thumbTo: '#8B5CF6',
     favourited: false,
     semester: 'current',
   },
@@ -84,8 +79,6 @@ const allCourses: Course[] = [
     next: { label: 'Next class: Today', time: '14:00 PM', type: 'Class' },
     progress: 45,
     accent: '#F97316',
-    thumbFrom: '#C2410C',
-    thumbTo: '#FB923C',
     favourited: false,
     semester: 'current',
   },
@@ -99,8 +92,6 @@ const allCourses: Course[] = [
     next: { label: 'Next class: Fri, 16 May', time: '09:00 AM', type: 'Class' },
     progress: 61,
     accent: '#1F9D55',
-    thumbFrom: '#15803D',
-    thumbTo: '#4ADE80',
     favourited: true,
     semester: 'current',
   },
@@ -114,8 +105,6 @@ const allCourses: Course[] = [
     next: { label: 'Deadline: 18 May', time: '11:59 PM', type: 'Deadline' },
     progress: 38,
     accent: '#DB2777',
-    thumbFrom: '#7C3AED',
-    thumbTo: '#C026D3',
     favourited: false,
     semester: 'current',
   },
@@ -129,8 +118,6 @@ const allCourses: Course[] = [
     next: { label: 'Next class: Thu, 15 May', time: '13:00 PM', type: 'Class' },
     progress: 54,
     accent: '#0891B2',
-    thumbFrom: '#0369A1',
-    thumbTo: '#38BDF8',
     favourited: false,
     semester: 'current',
   },
@@ -149,9 +136,9 @@ const courseUpdates = [
 ]
 
 const recentlyOpened = [
-  { title: 'Molecular Biology', code: 'BIOL08019', when: 'Today, 09:15',     thumbFrom: '#1D4ED8', thumbTo: '#0EA5E9' },
-  { title: 'Marketing',         code: 'MGTS08018', when: 'Yesterday, 16:40', thumbFrom: '#C2410C', thumbTo: '#FB923C' },
-  { title: 'Global History',    code: 'HIST08007', when: 'Yesterday, 11:20', thumbFrom: '#15803D', thumbTo: '#4ADE80' },
+  { title: 'Molecular Biology', code: 'BIOL08019', when: 'Today, 09:15' },
+  { title: 'Marketing',         code: 'MGTS08018', when: 'Yesterday, 16:40' },
+  { title: 'Global History',    code: 'HIST08007', when: 'Yesterday, 11:20' },
 ]
 
 const FILTERS = ['All', 'Current semester', 'Favourites', 'Completed'] as const
@@ -176,49 +163,23 @@ function Divider() {
 
 // ─── Course thumbnail (contains the star button so it is always clipped inside) ──
 
-function CourseThumbnail({ id, thumbFrom, thumbTo, title, fav, onToggleFav }: {
-  id: number
-  thumbFrom: string
-  thumbTo: string
-  title: string
+function CourseThumbnail({ code, fav, onToggleFav }: {
+  code: string
   fav: boolean
   onToggleFav: () => void
 }) {
-  const initials = title.split(' ').map((w) => w[0]).join('')
   return (
     <div
       className="relative w-full overflow-hidden"
-      style={{
-        height: 128,
-        background: `linear-gradient(135deg, ${thumbFrom}, ${thumbTo})`,
-        borderRadius: '16px 16px 0 0',
-      }}
+      style={{ height: 128, borderRadius: '16px 16px 0 0' }}
     >
-      {/* Grid pattern */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        style={{ opacity: 0.12 }}
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern id={`cp-${id}`} width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.6" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#cp-${id})`} />
-      </svg>
+      <img
+        src={getCourseImage(code)}
+        alt=""
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
 
-      {/* Initials watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-        <span
-          className="text-white font-bold"
-          style={{ fontSize: 40, letterSpacing: '-0.03em', opacity: 0.18 }}
-        >
-          {initials}
-        </span>
-      </div>
-
-      {/* Star button — lives inside this div, clipped by overflow-hidden above */}
+      {/* Star button */}
       <button
         onClick={onToggleFav}
         className="absolute top-3 right-3 flex items-center justify-center rounded-full transition-opacity hover:opacity-90"
@@ -242,31 +203,14 @@ function CourseThumbnail({ id, thumbFrom, thumbTo, title, fav, onToggleFav }: {
 
 // ─── Mini thumbnail (sidebar) ─────────────────────────────────────────────────
 
-function MiniThumb({ id, thumbFrom, thumbTo, title }: {
-  id: number; thumbFrom: string; thumbTo: string; title: string
-}) {
-  const initials = title.split(' ').map((w) => w[0]).join('')
+function MiniThumb({ code }: { code: string }) {
   return (
-    <div
-      className="shrink-0 rounded-lg overflow-hidden relative flex items-center justify-center"
-      style={{ width: 38, height: 38, background: `linear-gradient(135deg, ${thumbFrom}, ${thumbTo})` }}
-    >
-      {/* pattern */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        style={{ opacity: 0.15 }}
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern id={`mt-${id}`} width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#mt-${id})`} />
-      </svg>
-      <span className="relative z-10 text-white font-bold text-[11px]" style={{ opacity: 0.7 }}>
-        {initials}
-      </span>
+    <div className="shrink-0 rounded-lg overflow-hidden" style={{ width: 38, height: 38 }}>
+      <img
+        src={getCourseImage(code)}
+        alt=""
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
     </div>
   )
 }
@@ -287,10 +231,7 @@ function CourseCard({ course }: { course: Course }) {
     <Card className="flex flex-col">
       {/* Thumbnail — star is rendered INSIDE the thumbnail component */}
       <CourseThumbnail
-        id={course.id}
-        thumbFrom={course.thumbFrom}
-        thumbTo={course.thumbTo}
-        title={course.title}
+        code={course.code}
         fav={fav}
         onToggleFav={() => setFav(!fav)}
       />
@@ -358,7 +299,7 @@ function CourseCard({ course }: { course: Course }) {
         <div className="flex items-center gap-2 mt-auto">
           <button
             className="flex-1 text-white text-[13px] font-semibold rounded-[10px] transition-opacity hover:opacity-90 active:scale-[0.98]"
-            style={{ height: 40, background: '#072452' }}
+            style={{ height: 40, background: '#1B3FA0' }}
             onClick={() => course.detailPath && navigate(course.detailPath)}
           >
             Open course
@@ -398,16 +339,10 @@ export default function MyCourses() {
   })
 
   return (
-    // CSS grid: bounded main column + fixed sidebar — prevents all overflow issues
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 300px',
-        alignItems: 'start',
-      }}
-    >
-      {/* ── Main content ── */}
-      <div className="px-8 py-7 min-w-0">
+    <div className="flex h-full overflow-hidden">
+      {/* ── Center: only this scrolls ── */}
+      <div className="flex-1 overflow-y-auto min-w-0">
+      <div className="px-8 py-7">
 
         {/* Page title */}
         <h1
@@ -446,10 +381,10 @@ export default function MyCourses() {
                   className="text-[12px] font-medium px-3 whitespace-nowrap rounded-[8px] transition-all duration-150"
                   style={{
                     height: 34,
-                    background: active ? '#072452' : '#FFFFFF',
+                    background: active ? '#1B3FA0' : '#FFFFFF',
                     color: active ? '#FFFFFF' : '#48607A',
-                    border: active ? '1px solid #072452' : '1px solid #E6ECF3',
-                    boxShadow: active ? '0 2px 8px rgba(7,36,82,0.12)' : undefined,
+                    border: active ? '1px solid #1B3FA0' : '1px solid #E6ECF3',
+                    boxShadow: active ? '0 2px 8px rgba(27,63,160,0.15)' : undefined,
                   }}
                 >
                   {f}
@@ -494,11 +429,12 @@ export default function MyCourses() {
           </div>
         )}
       </div>
+      </div>
 
-      {/* ── Right sidebar ── */}
+      {/* ── Right sidebar: fixed, never scrolls ── */}
       <aside
-        className="border-l border-[#E6ECF3] bg-[#F7F9FC] sticky top-[72px] self-start flex flex-col gap-4"
-        style={{ padding: '24px 16px' }}
+        className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4 overflow-y-auto"
+        style={{ width: 300, padding: '24px 16px' }}
       >
         {/* Today */}
         <Card>
@@ -595,12 +531,7 @@ export default function MyCourses() {
             {recentlyOpened.map((r, i) => (
               <div key={i}>
                 <div className="flex items-center gap-3 py-2.5">
-                  <MiniThumb
-                    id={i + 100}
-                    thumbFrom={r.thumbFrom}
-                    thumbTo={r.thumbTo}
-                    title={r.title}
-                  />
+                  <MiniThumb code={r.code} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-semibold text-[#0A254F] truncate">{r.title}</div>
                     <div className="text-[11px] text-[#7B8DA5] mt-0.5">{r.code}</div>

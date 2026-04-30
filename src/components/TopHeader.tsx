@@ -32,7 +32,7 @@ export default function TopHeader() {
         <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div
             className="flex items-center justify-center rounded-full text-white text-xs font-semibold"
-            style={{ width: 36, height: 36, background: '#072452', fontSize: 12 }}
+            style={{ width: 36, height: 36, background: '#1B3FA0', fontSize: 12 }}
           >
             XH
           </div>

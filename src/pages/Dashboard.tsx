@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+import { getCourseImage } from '../data/courseImages'
 import {
   FileText,
   BookOpen,
@@ -9,6 +11,9 @@ import {
   Star,
 } from 'lucide-react'
 import StatusPill from '../components/StatusPill'
+import MiniCalendar from '../components/MiniCalendar'
+import DailyAgenda from '../components/DailyAgenda'
+import type { DailyAgendaItem } from '../components/DailyAgenda'
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -61,6 +66,7 @@ const updates = [
     content: 'New slides uploaded · Week 4 – Cell Signalling',
     time: '2h ago',
     unread: true,
+    route: '/courses/biol08019',
   },
   {
     id: 2,
@@ -69,6 +75,7 @@ const updates = [
     content: 'Room Change: Seminar on 15 May',
     time: '4h ago',
     unread: true,
+    route: '/updates',
   },
   {
     id: 3,
@@ -77,6 +84,7 @@ const updates = [
     content: 'Announcement slides published',
     time: 'Yesterday',
     unread: false,
+    route: '/updates',
   },
   {
     id: 4,
@@ -85,6 +93,7 @@ const updates = [
     content: 'Assignment feedback released',
     time: 'Yesterday',
     unread: false,
+    route: '/updates',
   },
   {
     id: 5,
@@ -93,53 +102,19 @@ const updates = [
     content: 'Week 9 reading list updated',
     time: '2 days ago',
     unread: false,
+    route: '/updates',
   },
 ]
 
-type CourseThumbnailStyle = {
-  from: string
-  to: string
-  patternColor: string
-}
-
 const courses = [
-  {
-    id: 1,
-    code: 'BIOL08019',
-    name: 'Molecular Biology',
-    progress: 72,
-    accent: '#2563EB',
-    thumb: { from: '#1D4ED8', to: '#0EA5E9', patternColor: 'rgba(255,255,255,0.08)' } as CourseThumbnailStyle,
-  },
-  {
-    id: 2,
-    code: 'SOCI08024',
-    name: 'Sociology',
-    progress: 58,
-    accent: '#7C3AED',
-    thumb: { from: '#6D28D9', to: '#8B5CF6', patternColor: 'rgba(255,255,255,0.08)' } as CourseThumbnailStyle,
-  },
-  {
-    id: 3,
-    code: 'MKTG08012',
-    name: 'Marketing',
-    progress: 45,
-    accent: '#F97316',
-    thumb: { from: '#EA580C', to: '#F59E0B', patternColor: 'rgba(255,255,255,0.08)' } as CourseThumbnailStyle,
-  },
-  {
-    id: 4,
-    code: 'HIST08031',
-    name: 'Global History',
-    progress: 61,
-    accent: '#1F9D55',
-    thumb: { from: '#166534', to: '#16A34A', patternColor: 'rgba(255,255,255,0.08)' } as CourseThumbnailStyle,
-  },
+  { id: 1, code: 'BIOL08019', name: 'Molecular Biology',  progress: 72, accent: '#2563EB', route: '/courses/biol08019' },
+  { id: 2, code: 'SOCI08024', name: 'Sociology',           progress: 58, accent: '#7C3AED', route: '/courses' },
+  { id: 3, code: 'MKTG08012', name: 'Marketing',           progress: 45, accent: '#F97316', route: '/courses' },
+  { id: 4, code: 'HIST08031', name: 'Global History',      progress: 61, accent: '#1F9D55', route: '/courses' },
 ]
 
 // ─── Mini Calendar ────────────────────────────────────────────────────────────
 
-const calendarDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 const calendarWeeks = [
   [null, null, null, 1, 2, 3, 4],
   [5, 6, 7, 8, 9, 10, 11],
@@ -162,18 +137,7 @@ const dayDots: Record<number, string> = {
 
 // ─── Agenda ───────────────────────────────────────────────────────────────────
 
-type AgendaCat = 'Class' | 'Task' | 'Personal' | 'Deadline' | 'Seminar'
-
-type AgendaItem = {
-  id: number
-  time: string
-  endTime?: string
-  title: string
-  subtitle: string
-  category: AgendaCat
-}
-
-const agendaItems: AgendaItem[] = [
+const agendaItems: DailyAgendaItem[] = [
   { id: 1, time: '09:00', endTime: '10:00', title: 'Molecular Biology Lecture', subtitle: 'David Hume Tower 2.12', category: 'Class' },
   { id: 2, time: '11:00', endTime: '12:00', title: 'Sociology Seminar', subtitle: 'Chrystal MacMillan G.06', category: 'Seminar' },
   { id: 3, time: '13:00', title: 'Review notes', subtitle: 'BIOL08019', category: 'Task' },
@@ -181,26 +145,20 @@ const agendaItems: AgendaItem[] = [
   { id: 5, time: '23:59', title: 'Lab Report 3', subtitle: 'BIOL08019', category: 'Deadline' },
 ]
 
-const catPill: Record<AgendaCat, React.ReactNode> = {
-  Class:    <StatusPill label="Class" variant="blue" />,
-  Task:     <StatusPill label="Task" variant="orange" />,
-  Personal: <StatusPill label="Personal" variant="green" />,
-  Deadline: <StatusPill label="Deadline" variant="red" />,
-  Seminar:  <StatusPill label="Seminar" variant="purple" />,
-}
-
 const upcoming = [
   {
     title: 'Lab Report 2: Enzyme Kinetics',
     sub: 'Due tomorrow 14 May, 11:59 PM',
     course: 'BIOL08019',
     pill: <StatusPill label="Not started" variant="orange" />,
+    route: '/courses/biol08019/assignment',
   },
   {
     title: 'Seminar Culture and Identity',
     sub: '16 May, 11:00 AM',
     course: 'SOCI08024',
     pill: <StatusPill label="Class" variant="blue" />,
+    route: '/courses/biol08019',
   },
 ]
 
@@ -221,10 +179,12 @@ function CardHeader({
   title,
   action,
   badge,
+  onAction,
 }: {
   title: string
   action?: string
   badge?: React.ReactNode
+  onAction?: () => void
 }) {
   return (
     <div className="flex items-center justify-between px-6 pt-5 pb-[14px]">
@@ -233,7 +193,10 @@ function CardHeader({
         {badge}
       </div>
       {action && (
-        <button className="text-[13px] font-semibold text-[#2563EB] hover:underline transition-all">
+        <button
+          onClick={onAction}
+          className="text-[13px] font-semibold text-[#2563EB] hover:underline transition-all cursor-pointer"
+        >
           {action}
         </button>
       )}
@@ -245,104 +208,55 @@ function Divider() {
   return <div className="border-t border-[#EEF2F7]" />
 }
 
-// ─── Edinburgh skyline SVG ────────────────────────────────────────────────────
+// ─── UoE crest watermark ─────────────────────────────────────────────────────
 
-function EdinburghSkyline() {
+function UoECrestWatermark() {
   return (
-    <svg
-      className="absolute right-0 bottom-0 opacity-[0.13] pointer-events-none"
-      width="320"
-      height="180"
-      viewBox="0 0 320 180"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Castle rock base */}
-      <path d="M60 180 L60 110 Q80 90 100 95 L130 80 L130 180Z" fill="white" />
-      {/* Castle towers */}
-      <rect x="65" y="75" width="18" height="36" fill="white" />
-      <rect x="63" y="70" width="22" height="8" fill="white" />
-      {/* Battlements left tower */}
-      <rect x="63" y="64" width="4" height="7" fill="white" />
-      <rect x="69" y="64" width="4" height="7" fill="white" />
-      <rect x="75" y="64" width="4" height="7" fill="white" />
-      <rect x="81" y="64" width="4" height="7" fill="white" />
-
-      {/* Main castle body */}
-      <rect x="90" y="60" width="35" height="55" fill="white" />
-      <rect x="88" y="52" width="39" height="10" fill="white" />
-      {/* Battlements main */}
-      <rect x="88" y="44" width="6" height="9" fill="white" />
-      <rect x="96" y="44" width="6" height="9" fill="white" />
-      <rect x="104" y="44" width="6" height="9" fill="white" />
-      <rect x="112" y="44" width="6" height="9" fill="white" />
-      <rect x="120" y="44" width="6" height="9" fill="white" />
-
-      {/* Castle flag */}
-      <line x1="115" y1="44" x2="115" y2="28" stroke="white" strokeWidth="1.5" />
-      <polygon points="115,28 124,33 115,38" fill="white" />
-
-      {/* Middle tower */}
-      <rect x="135" y="80" width="22" height="100" fill="white" />
-      <path d="M135 80 L146 62 L157 80Z" fill="white" />
-
-      {/* St Giles Cathedral dome/crown */}
-      <rect x="165" y="90" width="40" height="90" fill="white" />
-      {/* Crown steeple */}
-      <rect x="181" y="62" width="8" height="30" fill="white" />
-      <path d="M175 72 L185 55 L195 72Z" fill="white" />
-      {/* Flying buttresses */}
-      <line x1="172" y1="78" x2="165" y2="90" stroke="white" strokeWidth="2" />
-      <line x1="198" y1="78" x2="205" y2="90" stroke="white" strokeWidth="2" />
-      {/* Crown points */}
-      <rect x="176" y="60" width="5" height="14" fill="white" />
-      <rect x="183" y="56" width="5" height="18" fill="white" />
-      <rect x="190" y="60" width="5" height="14" fill="white" />
-
-      {/* Tenement buildings right */}
-      <rect x="215" y="100" width="28" height="80" fill="white" />
-      <rect x="248" y="112" width="24" height="68" fill="white" />
-      <rect x="277" y="95" width="30" height="85" fill="white" />
-      <rect x="310" y="108" width="20" height="72" fill="white" />
-
-      {/* Windows tenements */}
-      <rect x="220" y="108" width="5" height="6" fill="#072452" />
-      <rect x="229" y="108" width="5" height="6" fill="#072452" />
-      <rect x="220" y="120" width="5" height="6" fill="#072452" />
-      <rect x="229" y="120" width="5" height="6" fill="#072452" />
-
-      {/* Foreground hill */}
-      <path d="M0 180 Q30 160 60 165 Q90 170 120 160 L130 180Z" fill="white" />
-      <path d="M200 180 Q240 170 280 175 Q300 177 320 172 L320 180Z" fill="white" />
-
-      {/* Smoke/clouds */}
-      <ellipse cx="80" cy="50" rx="18" ry="8" fill="white" />
-      <ellipse cx="155" cy="38" rx="14" ry="6" fill="white" />
-      <ellipse cx="250" cy="55" rx="20" ry="7" fill="white" />
-    </svg>
+    <img
+      src="/edinburgh-logo.jpg"
+      alt=""
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        right: 36,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: 190,
+        height: 190,
+        filter: 'invert(1)',
+        mixBlendMode: 'screen',
+        opacity: 0.2,
+        pointerEvents: 'none',
+        userSelect: 'none',
+        draggable: false,
+      } as React.CSSProperties}
+    />
   )
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  return (
-    <div className="flex items-start">
+  const navigate = useNavigate()
 
-      {/* ── Main column ── */}
-      <div className="flex-1 px-7 py-6 min-w-0 flex flex-col gap-5">
+  return (
+    <div className="flex h-full overflow-hidden">
+
+      {/* ── Center: only this scrolls ── */}
+      <div className="flex-1 overflow-y-auto min-w-0">
+      <div className="px-7 py-6 flex flex-col gap-5">
 
         {/* Hero Banner */}
         <div
           className="relative overflow-hidden text-white flex-shrink-0"
           style={{
-            background: 'linear-gradient(135deg, #072452 0%, #0C3068 60%, #0B2F66 100%)',
+            background: '#1B3FA0',
             borderRadius: 18,
             minHeight: 174,
             padding: '32px 40px',
           }}
         >
-          <EdinburghSkyline />
+          <UoECrestWatermark />
 
           <p
             className="text-[12px] font-medium opacity-60 mb-2"
@@ -369,11 +283,14 @@ export default function Dashboard() {
 
         {/* ── Urgent Deadlines ── */}
         <Card>
-          <CardHeader title="Urgent Deadlines" action="View all" />
+          <CardHeader title="Urgent Deadlines" action="View all" onAction={() => navigate('/deadlines')} />
           <Divider />
           {deadlines.map((d, i) => (
             <div key={d.id}>
-              <div className="flex items-center gap-4 px-6 py-4">
+              <div
+                className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#F9FBFF] transition-colors"
+                onClick={() => navigate(d.id === 1 ? '/courses/biol08019/assignment' : '/deadlines')}
+              >
                 {/* Colored icon block */}
                 <div
                   className="shrink-0 flex items-center justify-center rounded-xl"
@@ -422,11 +339,14 @@ export default function Dashboard() {
 
         {/* ── Course Updates ── */}
         <Card>
-          <CardHeader title="Course Updates" action="View all" />
+          <CardHeader title="Course Updates" action="View all" onAction={() => navigate('/updates')} />
           <Divider />
           {updates.map((u, i) => (
             <div key={u.id}>
-              <div className="flex items-center gap-3 px-6 py-3">
+              <div
+                className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-[#F9FBFF] transition-colors"
+                onClick={() => navigate(u.route)}
+              >
                 {/* Unread dot */}
                 <div className="w-2 shrink-0 flex justify-center">
                   {u.unread
@@ -457,6 +377,7 @@ export default function Dashboard() {
                   <span className="text-[13px] text-[#48607A]"> · {u.content}</span>
                 </div>
                 <span className="text-[12px] text-[#B4C0D0] shrink-0 ml-2">{u.time}</span>
+                <ChevronRight size={13} strokeWidth={1.75} className="text-[#D7E0EA] shrink-0" />
               </div>
               {i < updates.length - 1 && <Divider />}
             </div>
@@ -465,44 +386,23 @@ export default function Dashboard() {
 
         {/* ── My Courses ── */}
         <Card>
-          <CardHeader title="My Courses" action="All courses" />
+          <CardHeader title="My Courses" action="All courses" onAction={() => navigate('/courses')} />
           <Divider />
           <div className="px-5 py-4 grid grid-cols-4 gap-3">
             {courses.map((c) => (
               <div
                 key={c.id}
+                onClick={() => navigate(c.route)}
                 className="rounded-[14px] border border-[#E6ECF3] cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
                 style={{ background: '#FFFFFF', overflow: 'hidden' }}
               >
                 {/* Thumbnail */}
-                <div
-                  className="relative overflow-hidden"
-                  style={{
-                    height: 88,
-                    background: `linear-gradient(135deg, ${c.thumb.from}, ${c.thumb.to})`,
-                  }}
-                >
-                  {/* Subtle grid pattern overlay */}
-                  <svg
-                    className="absolute inset-0 w-full h-full opacity-20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <defs>
-                      <pattern id={`grid-${c.id}`} width="16" height="16" patternUnits="userSpaceOnUse">
-                        <path d="M 16 0 L 0 0 0 16" fill="none" stroke="white" strokeWidth="0.5" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill={`url(#grid-${c.id})`} />
-                  </svg>
-                  {/* Course initials */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span
-                      className="text-white font-bold opacity-30"
-                      style={{ fontSize: 28, letterSpacing: '-0.02em' }}
-                    >
-                      {c.name.split(' ').map((w) => w[0]).join('')}
-                    </span>
-                  </div>
+                <div className="overflow-hidden" style={{ height: 88 }}>
+                  <img
+                    src={getCourseImage(c.code)}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 </div>
 
                 {/* Card body */}
@@ -524,121 +424,45 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+      </div>
 
-      {/* ── Right Sidebar ── */}
+      {/* ── Right Sidebar: fixed, never scrolls ── */}
       <aside
-        className="shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4 sticky top-[72px] self-start"
+        className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4 overflow-y-auto"
         style={{ width: 310, padding: '24px 16px' }}
       >
 
         {/* Mini Calendar */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[15px] font-bold text-[#0A254F]">May 2025</span>
-            <div className="flex items-center gap-0.5">
-              <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#7B8DA5] transition-colors text-base leading-none">
-                ‹
-              </button>
-              <button className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#7B8DA5] transition-colors text-base leading-none">
-                ›
-              </button>
-            </div>
-          </div>
-
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {calendarDays.map((d) => (
-              <div key={d} className="text-center text-[11px] font-semibold text-[#B4C0D0] py-1">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7">
-            {calendarWeeks.flat().map((day, idx) => {
-              const isToday = day === today
-              const dotColor = dayDots[day ?? -1]
-              return (
-                <div key={idx} className="flex flex-col items-center py-0.5">
-                  {day ? (
-                    <>
-                      <button
-                        className={`w-7 h-7 flex items-center justify-center rounded-full text-[13px] font-medium transition-colors ${
-                          isToday
-                            ? 'bg-[#072452] text-white font-semibold'
-                            : 'text-[#0A254F] hover:bg-[#F1F5F9]'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                      {dotColor && !isToday && (
-                        <span
-                          className="w-[5px] h-[5px] rounded-full mt-0.5"
-                          style={{ background: dotColor }}
-                        />
-                      )}
-                      {!dotColor && <span className="w-[5px] h-[5px] mt-0.5" />}
-                    </>
-                  ) : (
-                    <span className="w-7 h-7" />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </Card>
+        <MiniCalendar
+          monthLabel="May 2025"
+          weeks={calendarWeeks}
+          selectedDate={today}
+          eventDots={dayDots}
+        />
 
         {/* Daily Agenda */}
-        <Card>
-          <div className="flex items-center justify-between px-5 pt-5 pb-[14px]">
-            <h2 className="text-[17px] font-bold text-[#0A254F]">14 May Agenda</h2>
-            <span
-              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={{ background: '#072452', color: 'white', letterSpacing: '0.04em' }}
-            >
-              Today
-            </span>
-          </div>
-          <Divider />
-
-          <div className="px-5 py-1">
-            {agendaItems.map((item, i) => (
-              <div key={item.id}>
-                <div className="flex items-start gap-3 py-3">
-                  {/* Time */}
-                  <div className="shrink-0 pt-0.5" style={{ minWidth: 44 }}>
-                    <div className="text-[12px] font-semibold text-[#0A254F]">{item.time}</div>
-                    {item.endTime && (
-                      <div className="text-[11px] text-[#B4C0D0]">{item.endTime}</div>
-                    )}
-                  </div>
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[#0A254F] leading-snug mb-0.5 truncate">
-                      {item.title}
-                    </div>
-                    <div className="text-[12px] text-[#7B8DA5] truncate">{item.subtitle}</div>
-                  </div>
-                  {/* Pill */}
-                  <div className="shrink-0 pt-0.5">{catPill[item.category]}</div>
-                </div>
-                {i < agendaItems.length - 1 && <Divider />}
-              </div>
-            ))}
-          </div>
-
-          {/* Add to-do button */}
-          <div className="px-5 pb-4 pt-2">
+        <DailyAgenda
+          dateLabel="14 May Agenda"
+          showTodayBadge
+          items={agendaItems}
+          onItemClick={(item) => {
+            if (item.category === 'Deadline') navigate('/courses/biol08019/assignment')
+            else if (item.category === 'Class' || item.category === 'Seminar') navigate('/courses/biol08019')
+          }}
+          bottomAction={
             <button
-              className="w-full flex items-center justify-center gap-2 text-[13px] font-semibold text-[#7B8DA5] hover:text-[#0A254F] hover:border-[#B4C0D0] transition-all rounded-[10px] py-2"
-              style={{ border: '1.5px dashed #D7E0EA' }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 7, fontSize: 13, fontWeight: 600, color: '#7B8DA5',
+                background: 'none', border: '1.5px dashed #D7E0EA', borderRadius: 10,
+                padding: '8px 0', cursor: 'pointer',
+              }}
             >
               <Plus size={14} strokeWidth={2.5} />
               Add new to-do
             </button>
-          </div>
-        </Card>
+          }
+        />
 
         {/* Upcoming */}
         <Card>
@@ -647,7 +471,10 @@ export default function Dashboard() {
           <div className="px-5 py-1">
             {upcoming.map((u, i) => (
               <div key={i}>
-                <div className="py-3">
+                <div
+                  className="py-3 cursor-pointer hover:bg-[#F9FBFF] -mx-5 px-5 rounded-xl transition-colors"
+                  onClick={() => navigate(u.route)}
+                >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="text-[13px] font-semibold text-[#0A254F] leading-snug flex-1">
                       {u.title}

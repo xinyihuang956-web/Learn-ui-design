@@ -4,9 +4,19 @@
   --font-sans: Inter, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   --font-serif: Georgia, "Times New Roman", serif;
 
-  --color-navy-900: #072452;
-  --color-navy-800: #0B2F66;
-  --color-navy-700: #123E7A;
+  /* ── Brand primary blue (replaces old navy) ──────────────────────────── */
+  --color-primary-900: #1B3FA0;
+  --color-primary-800: #1E4DB8;
+  --color-primary-700: #2459C8;
+  --color-primary-600: #2563EB;
+  --color-primary-500: #3B82F6;
+  --color-primary-100: #DBEAFE;
+  --color-primary-50:  #EFF6FF;
+
+  /* kept for any legacy references */
+  --color-navy-900: #1B3FA0;
+  --color-navy-800: #1E4DB8;
+  --color-navy-700: #2459C8;
 
   --color-page-bg: #F7F9FC;
   --color-surface: #FFFFFF;
@@ -35,15 +45,26 @@
 
   --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.04);
   --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.03);
-  --shadow-nav-active: 0 8px 20px rgba(7, 36, 82, 0.12);
+  --shadow-nav-active: 0 8px 20px rgba(27, 63, 160, 0.15);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
+  overflow: hidden;
   margin: 0;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
   font-family: Inter, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   background-color: #F7F9FC;
   color: #0A254F;

@@ -3,6 +3,9 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, Plus, X,
   BookOpen, AlertCircle, User, Users, ClipboardList, MessageSquare,
 } from 'lucide-react'
+import MiniCalendarShared from '../components/MiniCalendar'
+import DailyAgendaShared from '../components/DailyAgenda'
+import type { DailyAgendaItem as SharedAgendaItem } from '../components/DailyAgenda'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -220,7 +223,7 @@ function Timetable({ events }: { events: TEvent[] }) {
               <div style={{ fontSize: 10, color: '#7B8DA5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
                 {d.name}
               </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', background: sel ? '#072452' : 'transparent', color: sel ? '#fff' : '#0A254F', fontSize: 14, fontWeight: sel ? 700 : 500 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', background: sel ? '#1B3FA0' : 'transparent', color: sel ? '#fff' : '#0A254F', fontSize: 14, fontWeight: sel ? 700 : 500 }}>
                 {d.date}
               </div>
               <div style={{ fontSize: 10, color: '#7B8DA5', marginTop: 3 }}>May</div>
@@ -260,91 +263,34 @@ function Timetable({ events }: { events: TEvent[] }) {
   )
 }
 
-// ─── MiniCalendar ─────────────────────────────────────────────────────────────
+// ─── Schedule mini-calendar data ─────────────────────────────────────────────
 
-function MiniCalendar() {
-  const startOffset = 2
-  const daysInMonth = 31
-  const cells: (number | null)[] = []
-  for (let i = 0; i < startOffset; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-  while (cells.length % 7 !== 0) cells.push(null)
-
-  return (
-    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, padding: '20px', boxShadow: '0 8px 24px rgba(15,23,42,0.04)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#0A254F' }}>May 2024</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7B8DA5', cursor: 'pointer' }}>
-            <ChevronLeft size={14} strokeWidth={1.75} />
-          </button>
-          <button style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7B8DA5', cursor: 'pointer' }}>
-            <ChevronRight size={14} strokeWidth={1.75} />
-          </button>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#7B8DA5', padding: '2px 0' }}>{d}</div>
-        ))}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-        {cells.map((d, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'center', padding: '2px 0' }}>
-            {d !== null && (
-              <div style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: d === 15 ? '#072452' : 'transparent', color: d === 15 ? '#fff' : (d >= 13 && d <= 19 ? '#0A254F' : '#7B8DA5'), fontSize: 12, fontWeight: d === 15 ? 700 : d >= 13 && d <= 19 ? 500 : 400, cursor: 'pointer' }}>
-                {d}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+function buildScheduleWeeks(startOffset: number, daysInMonth: number): (number | null)[][] {
+  const flat: (number | null)[] = []
+  for (let i = 0; i < startOffset; i++) flat.push(null)
+  for (let d = 1; d <= daysInMonth; d++) flat.push(d)
+  while (flat.length % 7 !== 0) flat.push(null)
+  const weeks: (number | null)[][] = []
+  for (let i = 0; i < flat.length; i += 7) weeks.push(flat.slice(i, i + 7))
+  return weeks
 }
 
-// ─── DailyAgenda ─────────────────────────────────────────────────────────────
+const SCHEDULE_CAL_WEEKS = buildScheduleWeeks(2, 31) // May 2024: starts Wed (offset 2)
+const SCHEDULE_CAL_DOTS: Record<number, string> = {
+  13: '#2563EB', 14: '#F97316', 15: '#2563EB',
+  16: '#EF4444', 17: '#1F9D55',
+}
 
-function DailyAgenda({ items }: { items: AgendaItem[] }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, padding: '20px', boxShadow: '0 8px 24px rgba(15,23,42,0.04)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#0A254F' }}>15 May Agenda</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#072452', borderRadius: 999, padding: '3px 10px' }}>
-          Today
-        </span>
-      </div>
+// ─── Map AgendaItem → SharedAgendaItem ───────────────────────────────────────
 
-      {items.map((item, i) => {
-        const s = TYPE_STYLES[item.type]
-        return (
-          <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 10, padding: '10px 0', borderBottom: i < items.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
-            <div style={{ fontSize: 11, color: '#7B8DA5', fontWeight: 500, paddingTop: 2, lineHeight: '16px' }}>
-              {item.time}
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                <span style={{ color: s.text, flexShrink: 0 }}><EIcon type={item.type} size={12} /></span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#0A254F', lineHeight: '18px' }}>{item.title}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                <span style={{ fontSize: 11, color: '#7B8DA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.location}
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: s.text, background: s.bg, borderRadius: 999, padding: '2px 8px', border: `1px solid ${s.border}`, flexShrink: 0 }}>
-                  {item.type}
-                </span>
-              </div>
-            </div>
-          </div>
-        )
-      })}
-
-      <button style={{ marginTop: 12, width: '100%', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
-        View full day →
-      </button>
-    </div>
-  )
+function toSharedItems(items: AgendaItem[]): SharedAgendaItem[] {
+  return items.map(item => ({
+    id: item.id,
+    time: item.time,
+    title: item.title,
+    subtitle: item.location,
+    category: item.type as SharedAgendaItem['category'],
+  }))
 }
 
 // ─── FilterCard ───────────────────────────────────────────────────────────────
@@ -430,7 +376,7 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(7, 36, 82, 0.18)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(27, 63, 160, 0.18)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
       onClick={onClose}
     >
       <div
@@ -535,7 +481,7 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <div
               onClick={() => setField('addToAgenda', !form.addToAgenda)}
-              style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${form.addToAgenda ? '#072452' : '#D7E0EA'}`, background: form.addToAgenda ? '#072452' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', transition: 'all 0.15s' }}
+              style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${form.addToAgenda ? '#1B3FA0' : '#D7E0EA'}`, background: form.addToAgenda ? '#1B3FA0' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', transition: 'all 0.15s' }}
             >
               {form.addToAgenda && (
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -552,7 +498,7 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
           <button onClick={onClose} style={{ height: 38, padding: '0 18px', borderRadius: 10, border: '1px solid #D7E0EA', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             Cancel
           </button>
-          <button onClick={handleSubmit} style={{ height: 38, padding: '0 18px', borderRadius: 10, background: '#072452', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+          <button onClick={handleSubmit} style={{ height: 38, padding: '0 18px', borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
             Add item
           </button>
         </div>
@@ -591,58 +537,77 @@ export default function Schedule() {
   }
 
   return (
-    <div style={{ padding: '32px 32px 48px' }}>
-      {/* Title */}
-      <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 18 }}>
-        Schedule
-      </h1>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
-      {/* Controls row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#48607A', cursor: 'pointer' }}>
-            <ChevronLeft size={18} strokeWidth={1.75} />
-          </button>
-          <button style={{ height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            Today
-          </button>
-          <button style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#48607A', cursor: 'pointer' }}>
-            <ChevronRight size={18} strokeWidth={1.75} />
-          </button>
-        </div>
+      {/* ── Center: title + controls + timetable, only this scrolls ── */}
+      <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+        <div style={{ padding: '32px 32px 48px' }}>
+          {/* Title */}
+          <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 18 }}>
+            Schedule
+          </h1>
 
-        <button style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          May 13 – 19, 2024
-          <ChevronDown size={13} strokeWidth={1.75} color="#7B8DA5" />
-        </button>
-
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={() => setModalOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', borderRadius: 10, background: '#072452', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
-          >
-            <Plus size={15} strokeWidth={2} />
-            Add item
-          </button>
-
-          <div style={{ display: 'flex', border: '1px solid #E6ECF3', borderRadius: 10, overflow: 'hidden' }}>
-            {(['Day', 'Week', 'Month'] as const).map((v, i) => (
-              <button key={v} style={{ padding: '0 14px', height: 36, background: v === 'Week' ? '#072452' : '#fff', color: v === 'Week' ? '#fff' : '#48607A', border: 'none', borderLeft: i > 0 ? '1px solid #E6ECF3' : 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                {v}
+          {/* Controls row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#48607A', cursor: 'pointer' }}>
+                <ChevronLeft size={18} strokeWidth={1.75} />
               </button>
-            ))}
+              <button style={{ height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Today
+              </button>
+              <button style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#48607A', cursor: 'pointer' }}>
+                <ChevronRight size={18} strokeWidth={1.75} />
+              </button>
+            </div>
+
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              May 13 – 19, 2024
+              <ChevronDown size={13} strokeWidth={1.75} color="#7B8DA5" />
+            </button>
+
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => setModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+              >
+                <Plus size={15} strokeWidth={2} />
+                Add item
+              </button>
+
+              <div style={{ display: 'flex', border: '1px solid #E6ECF3', borderRadius: 10, overflow: 'hidden' }}>
+                {(['Day', 'Week', 'Month'] as const).map((v, i) => (
+                  <button key={v} style={{ padding: '0 14px', height: 36, background: v === 'Week' ? '#1B3FA0' : '#fff', color: v === 'Week' ? '#fff' : '#48607A', border: 'none', borderLeft: i > 0 ? '1px solid #E6ECF3' : 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          <Timetable events={events} />
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 24, alignItems: 'start' }}>
-        <Timetable events={events} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 72 }}>
-          <MiniCalendar />
-          <DailyAgenda items={agenda} />
-          <FilterCard />
-        </div>
+      {/* ── Right sidebar: fixed, never scrolls ── */}
+      <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <MiniCalendarShared
+          monthLabel="May 2024"
+          weeks={SCHEDULE_CAL_WEEKS}
+          selectedDate={15}
+          eventDots={SCHEDULE_CAL_DOTS}
+        />
+        <DailyAgendaShared
+          dateLabel="15 May Agenda"
+          showTodayBadge
+          items={toSharedItems(agenda)}
+          bottomAction={
+            <button style={{ width: '100%', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0' }}>
+              View full day →
+            </button>
+          }
+        />
+        <FilterCard />
       </div>
 
       {/* Modal */}

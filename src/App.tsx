@@ -5,6 +5,8 @@ import MyCourses from './pages/MyCourses'
 import CourseDetail from './pages/CourseDetail'
 import Schedule from './pages/Schedule'
 import AssignmentSubmission from './pages/AssignmentSubmission'
+import AllDeadlines from './pages/AllDeadlines'
+import CourseUpdates from './pages/CourseUpdates'
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
           <Route path="/courses/:courseId" element={<CourseDetail />} />
           <Route path="/courses/:courseId/assignment" element={<AssignmentSubmission />} />
           <Route path="/schedule" element={<Schedule />} />
+          <Route path="/deadlines" element={<AllDeadlines />} />
+          <Route path="/updates" element={<CourseUpdates />} />
         </Routes>
       </AppShell>
     </BrowserRouter>

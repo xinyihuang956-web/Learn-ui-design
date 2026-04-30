@@ -47,7 +47,7 @@ function StepNode({ status, n }: { status: StepStatus; n: number }) {
     )
   } else if (status === 'active') {
     circle = (
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#072452', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1B3FA0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>
         {n}
       </div>
     )
@@ -101,7 +101,7 @@ function InfoCard() {
     }}>
       <div style={{
         width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-        background: 'linear-gradient(135deg, #EAF2FF 0%, #BFDBFE 100%)',
+        background: '#EAF2FF',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <FileText size={20} strokeWidth={1.75} color="#2563EB" />
@@ -174,7 +174,7 @@ function ProgressCard({ statuses }: { statuses: [ProgStatus, ProgStatus, ProgSta
               <Check size={12} color="#fff" strokeWidth={2.5} />
             </div>
           ) : s === 'In progress' ? (
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#072452', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#1B3FA0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
               {i + 1}
             </div>
           ) : (
@@ -279,7 +279,7 @@ function SecondaryBtn({ onClick, children }: { onClick?: () => void; children: R
 
 function PrimaryBtn({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, background: '#072452', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
       {children}
     </button>
   )
@@ -455,7 +455,7 @@ function SubmitFinalStep({ onBack, onSubmit }: { onBack: () => void; onSubmit: (
 
       {/* Declaration */}
       <div style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
-        <div style={{ width: 18, height: 18, borderRadius: 4, background: '#072452', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+        <div style={{ width: 18, height: 18, borderRadius: 4, background: '#1B3FA0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
           <Check size={11} color="#fff" strokeWidth={2.5} />
         </div>
         <div>
@@ -536,35 +536,35 @@ export default function AssignmentSubmission() {
   const progressStatuses = getProgressStatuses(step)
 
   return (
-    <div style={{ padding: '32px 32px 48px' }}>
-      {/* Title */}
-      <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 8 }}>
-        Assignment Submission
-      </h1>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      {/* Center: scrollable */}
+      <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+        <div style={{ padding: '32px 32px 48px' }}>
+          {/* Title */}
+          <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 8 }}>
+            Assignment Submission
+          </h1>
 
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 24 }}>
-        <button onClick={() => navigate('/courses')} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          Courses
-        </button>
-        <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
-        <button onClick={() => navigate('/courses/biol08019')} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          Molecular Biology
-        </button>
-        <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
-        <span style={{ fontSize: 13, color: '#7B8DA5' }}>Assignments</span>
-      </div>
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 24 }}>
+            <button onClick={() => navigate('/courses')} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Courses
+            </button>
+            <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
+            <button onClick={() => navigate('/courses/biol08019')} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Molecular Biology
+            </button>
+            <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
+            <span style={{ fontSize: 13, color: '#7B8DA5' }}>Assignments</span>
+          </div>
 
-      {/* Info card (always visible) */}
-      <InfoCard />
+          {/* Info card (always visible) */}
+          <InfoCard />
 
-      {/* Stepper (always visible) */}
-      <Stepper statuses={stepperStatuses} />
+          {/* Stepper (always visible) */}
+          <Stepper statuses={stepperStatuses} />
 
-      {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 24, alignItems: 'start' }}>
-        {/* Main content — one step at a time */}
-        <div>
+          {/* Step content */}
           {step === 1 && (
             <RequirementStep
               onNext={() => setStep(2)}
@@ -587,12 +587,12 @@ export default function AssignmentSubmission() {
             <SuccessState onDashboard={() => navigate('/dashboard')} />
           )}
         </div>
+      </div>
 
-        {/* Right sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', position: 'sticky', top: 72 }}>
-          <AssignmentSummaryCard />
-          <ProgressCard statuses={progressStatuses} />
-        </div>
+      {/* Right sidebar: fixed, non-scrolling */}
+      <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <AssignmentSummaryCard />
+        <ProgressCard statuses={progressStatuses} />
       </div>
     </div>
   )

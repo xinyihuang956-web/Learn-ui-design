@@ -278,7 +278,7 @@ function AssignmentRow({ a, last, onView }: { a: Assignment; last: boolean; onVi
         {/* Button */}
         <button
           onClick={onView}
-          className="shrink-0 flex items-center gap-1.5 text-[12px] font-semibold text-[#072452] border border-[#D7E0EA] rounded-[10px] px-3 hover:bg-[#F7F9FC] transition-colors"
+          className="shrink-0 flex items-center gap-1.5 text-[12px] font-semibold text-[#1B3FA0] border border-[#D7E0EA] rounded-[10px] px-3 hover:bg-[#EFF6FF] transition-colors"
           style={{ height: 34 }}
         >
           View assignment
@@ -305,7 +305,7 @@ function AnnouncementRow({ a, last }: { a: Announcement; last: boolean }) {
         {/* Avatar */}
         <div
           className="shrink-0 flex items-center justify-center rounded-full text-white text-[12px] font-bold"
-          style={{ width: 36, height: 36, background: '#072452', marginTop: 2 }}
+          style={{ width: 36, height: 36, background: '#1B3FA0', marginTop: 2 }}
         >
           {a.initials}
         </div>
@@ -353,9 +353,9 @@ export default function CourseDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
 
   return (
-    <div>
-      {/* ── Full-width header ── */}
-      <div className="px-8 pt-7 pb-0">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* ── Full-width header: pinned, never scrolls ── */}
+      <div className="flex-shrink-0 px-8 pt-7 pb-0">
         {/* Back link */}
         <button
           onClick={() => navigate('/courses')}
@@ -382,8 +382,8 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* ── Tab bar (full width) ── */}
-      <div className="border-b border-[#E6ECF3] px-8">
+      {/* ── Tab bar: pinned below header ── */}
+      <div className="flex-shrink-0 border-b border-[#E6ECF3] px-8">
         <div className="flex items-end gap-0">
           {TABS.map((tab) => {
             const active = activeTab === tab
@@ -404,16 +404,11 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* ── Two-column grid ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 320px',
-          alignItems: 'start',
-        }}
-      >
-        {/* ── Left / main column ── */}
-        <div className="px-8 py-6 flex flex-col gap-5 min-w-0">
+      {/* ── Content area: center scrolls, sidebar fixed ── */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* ── Center column: only this scrolls ── */}
+        <div className="flex-1 overflow-y-auto min-w-0">
+        <div className="px-8 py-6 flex flex-col gap-5">
 
           {/* Weekly Materials */}
           <Card>
@@ -450,10 +445,12 @@ export default function CourseDetail() {
           </Card>
         </div>
 
-        {/* ── Right sidebar ── */}
+        </div>
+
+        {/* ── Right sidebar: fixed, never scrolls ── */}
         <aside
-          className="border-l border-[#E6ECF3] bg-[#F7F9FC] sticky top-[72px] self-start flex flex-col gap-4"
-          style={{ padding: '24px 16px' }}
+          className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4 overflow-y-auto"
+          style={{ width: 320, padding: '24px 16px' }}
         >
 
           {/* Course Overview */}
@@ -557,3 +554,4 @@ export default function CourseDetail() {
     </div>
   )
 }
+
