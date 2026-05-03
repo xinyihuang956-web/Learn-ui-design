@@ -112,7 +112,7 @@ export default function CourseUpdates() {
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto min-w-0">
-        <div style={{ padding: '32px 40px 48px', maxWidth: 900 }}>
+        <div className="w-full max-w-[1280px] mx-auto" style={{ padding: '32px 40px 48px' }}>
 
           {/* Back link */}
           <button
