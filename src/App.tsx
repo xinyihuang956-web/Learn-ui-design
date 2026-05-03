@@ -16,8 +16,8 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/courses" element={<MyCourses />} />
-          <Route path="/courses/:courseId" element={<CourseDetail />} />
-          <Route path="/courses/:courseId/assignment" element={<AssignmentSubmission />} />
+          <Route path="/courses/:courseSlug" element={<CourseDetail />} />
+          <Route path="/courses/:courseSlug/assignments/:assignmentSlug" element={<AssignmentSubmission />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/deadlines" element={<AllDeadlines />} />
           <Route path="/updates" element={<CourseUpdates />} />

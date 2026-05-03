@@ -54,7 +54,7 @@ const allCourses: Course[] = [
     accent: '#2563EB',
     favourited: true,
     semester: 'current',
-    detailPath: '/courses/biol08019',
+    detailPath: '/courses/molecular-biology',
   },
   {
     id: 2,
@@ -68,6 +68,7 @@ const allCourses: Course[] = [
     accent: '#7C3AED',
     favourited: false,
     semester: 'current',
+    detailPath: '/courses/sociology',
   },
   {
     id: 3,
@@ -81,6 +82,7 @@ const allCourses: Course[] = [
     accent: '#F97316',
     favourited: false,
     semester: 'current',
+    detailPath: '/courses/marketing',
   },
   {
     id: 4,
@@ -94,6 +96,7 @@ const allCourses: Course[] = [
     accent: '#1F9D55',
     favourited: true,
     semester: 'current',
+    detailPath: '/courses/global-history',
   },
   {
     id: 5,
@@ -107,6 +110,7 @@ const allCourses: Course[] = [
     accent: '#DB2777',
     favourited: false,
     semester: 'current',
+    detailPath: '/courses/design-informatics',
   },
   {
     id: 6,
@@ -120,6 +124,7 @@ const allCourses: Course[] = [
     accent: '#0891B2',
     favourited: false,
     semester: 'current',
+    detailPath: '/courses/data-science',
   },
 ]
 
@@ -136,9 +141,9 @@ const courseUpdates = [
 ]
 
 const recentlyOpened = [
-  { title: 'Molecular Biology', code: 'BIOL08019', when: 'Today, 09:15' },
-  { title: 'Marketing',         code: 'MGTS08018', when: 'Yesterday, 16:40' },
-  { title: 'Global History',    code: 'HIST08007', when: 'Yesterday, 11:20' },
+  { title: 'Molecular Biology', code: 'BIOL08019', slug: 'molecular-biology', when: 'Today, 09:15' },
+  { title: 'Marketing',         code: 'MGTS08018', slug: 'marketing',         when: 'Yesterday, 16:40' },
+  { title: 'Global History',    code: 'HIST08007', slug: 'global-history',    when: 'Yesterday, 11:20' },
 ]
 
 const FILTERS = ['All', 'Current semester', 'Favourites', 'Completed'] as const
@@ -320,6 +325,7 @@ function CourseCard({ course }: { course: Course }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyCourses() {
+  const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState<Filter>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -530,7 +536,10 @@ export default function MyCourses() {
           <div className="px-5 py-1">
             {recentlyOpened.map((r, i) => (
               <div key={i}>
-                <div className="flex items-center gap-3 py-2.5">
+                <div
+                  className="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-[#F9FBFF] -mx-5 px-5 rounded-xl transition-colors"
+                  onClick={() => navigate(`/courses/${r.slug}`)}
+                >
                   <MiniThumb code={r.code} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-semibold text-[#0A254F] truncate">{r.title}</div>

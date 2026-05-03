@@ -31,11 +31,12 @@ const deadlines = [
     color: '#FFECEC',
     iconColor: '#EF4444',
     borderColor: '#EF4444',
+    route: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics',
   },
   {
     id: 2,
     title: 'Critical Analysis: Globalisation and Culture',
-    course: 'SOCI08024 – Urban Sociology',
+    course: 'SOCI08001 – Sociology',
     dueLabel: 'Due in 2 days, 16 May',
     time: '5:00 PM',
     remaining: '2d 5h',
@@ -43,11 +44,12 @@ const deadlines = [
     color: '#FFF3E6',
     iconColor: '#F97316',
     borderColor: '#F97316',
+    route: '/courses/sociology/assignments/critical-analysis-globalisation-culture',
   },
   {
     id: 3,
     title: 'Presentation: Marketing Strategy',
-    course: 'MKTG08012 – Marketing',
+    course: 'MGTS08018 – Marketing',
     dueLabel: 'Due 18 May',
     time: '3:00 PM',
     remaining: '4d left',
@@ -55,6 +57,7 @@ const deadlines = [
     color: '#F1F5F9',
     iconColor: '#48607A',
     borderColor: '#B4C0D0',
+    route: '/courses/marketing/assignments/presentation-marketing-strategy',
   },
 ]
 
@@ -66,12 +69,12 @@ const updates = [
     content: 'New slides uploaded · Week 4 – Cell Signalling',
     time: '2h ago',
     unread: true,
-    route: '/courses/biol08019',
+    route: '/courses/molecular-biology',
   },
   {
     id: 2,
     icon: <MessageSquare size={15} strokeWidth={1.75} />,
-    courseCode: 'SOCI08024',
+    courseCode: 'SOCI08001',
     content: 'Room Change: Seminar on 15 May',
     time: '4h ago',
     unread: true,
@@ -80,25 +83,25 @@ const updates = [
   {
     id: 3,
     icon: <Megaphone size={15} strokeWidth={1.75} />,
-    courseCode: 'DESI08009',
+    courseCode: 'INFR08020',
     content: 'Announcement slides published',
     time: 'Yesterday',
     unread: false,
-    route: '/updates',
+    route: '/courses/design-informatics',
   },
   {
     id: 4,
     icon: <Star size={15} strokeWidth={1.75} />,
-    courseCode: 'DATA08006',
+    courseCode: 'DSCI08012',
     content: 'Assignment feedback released',
     time: 'Yesterday',
     unread: false,
-    route: '/updates',
+    route: '/courses/data-science',
   },
   {
     id: 5,
     icon: <BookOpen size={15} strokeWidth={1.75} />,
-    courseCode: 'MKTG08012',
+    courseCode: 'MGTS08018',
     content: 'Week 9 reading list updated',
     time: '2 days ago',
     unread: false,
@@ -107,10 +110,10 @@ const updates = [
 ]
 
 const courses = [
-  { id: 1, code: 'BIOL08019', name: 'Molecular Biology',  progress: 72, accent: '#2563EB', route: '/courses/biol08019' },
-  { id: 2, code: 'SOCI08024', name: 'Sociology',           progress: 58, accent: '#7C3AED', route: '/courses' },
-  { id: 3, code: 'MKTG08012', name: 'Marketing',           progress: 45, accent: '#F97316', route: '/courses' },
-  { id: 4, code: 'HIST08031', name: 'Global History',      progress: 61, accent: '#1F9D55', route: '/courses' },
+  { id: 1, code: 'BIOL08019', name: 'Molecular Biology', progress: 72, accent: '#2563EB', route: '/courses/molecular-biology' },
+  { id: 2, code: 'SOCI08001', name: 'Sociology',          progress: 58, accent: '#7C3AED', route: '/courses/sociology' },
+  { id: 3, code: 'MGTS08018', name: 'Marketing',          progress: 45, accent: '#F97316', route: '/courses/marketing' },
+  { id: 4, code: 'HIST08007', name: 'Global History',     progress: 61, accent: '#1F9D55', route: '/courses/global-history' },
 ]
 
 // ─── Mini Calendar ────────────────────────────────────────────────────────────
@@ -289,7 +292,7 @@ export default function Dashboard() {
             <div key={d.id}>
               <div
                 className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#F9FBFF] transition-colors"
-                onClick={() => navigate(d.id === 1 ? '/courses/biol08019/assignment' : '/deadlines')}
+                onClick={() => navigate(d.route)}
               >
                 {/* Colored icon block */}
                 <div

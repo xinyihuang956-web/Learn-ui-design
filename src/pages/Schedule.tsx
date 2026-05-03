@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, ChevronDown, Plus, X,
   BookOpen, AlertCircle, User, Users, ClipboardList, MessageSquare,
@@ -21,6 +22,7 @@ interface TEvent {
   startM: number
   endH: number
   endM: number
+  route?: string
 }
 
 interface AgendaItem {
@@ -87,17 +89,17 @@ const LEGEND = [
 ]
 
 const INITIAL_EVENTS: TEvent[] = [
-  { id: 'm1',  day: 0, title: 'Molecular Biology Lecture',  location: 'David Hume 2.12',    type: 'Class',    startH: 9,  startM: 0,  endH: 10, endM: 0  },
-  { id: 'm2',  day: 0, title: 'Sociology Seminar',          location: 'Appleton Tower 1.05', type: 'Seminar',  startH: 11, startM: 0,  endH: 12, endM: 0  },
+  { id: 'm1',  day: 0, title: 'Molecular Biology Lecture',  location: 'David Hume 2.12',    type: 'Class',    startH: 9,  startM: 0,  endH: 10, endM: 0,  route: '/courses/molecular-biology' },
+  { id: 'm2',  day: 0, title: 'Sociology Seminar',          location: 'Appleton Tower 1.05', type: 'Seminar',  startH: 11, startM: 0,  endH: 12, endM: 0,  route: '/courses/sociology' },
   { id: 'm3',  day: 0, title: 'Review seminar notes',       location: '',                    type: 'Task',     startH: 15, startM: 0,  endH: 16, endM: 0  },
   { id: 't1',  day: 1, title: 'Marketing Group Meeting',    location: 'Online',              type: 'Meeting',  startH: 13, startM: 0,  endH: 14, endM: 30 },
   { id: 't2',  day: 1, title: 'Personal gym session',       location: 'Pleasance Gym',       type: 'Personal', startH: 17, startM: 30, endH: 18, endM: 30 },
-  { id: 'w1',  day: 2, title: 'Molecular Biology Lecture',  location: 'David Hume 2.12',     type: 'Class',    startH: 9,  startM: 0,  endH: 10, endM: 0  },
-  { id: 'w2',  day: 2, title: 'Lab Report Deadline',        location: 'LEARN Assignment',    type: 'Deadline', startH: 14, startM: 0,  endH: 14, endM: 30 },
+  { id: 'w1',  day: 2, title: 'Molecular Biology Lecture',  location: 'David Hume 2.12',     type: 'Class',    startH: 9,  startM: 0,  endH: 10, endM: 0,  route: '/courses/molecular-biology' },
+  { id: 'w2',  day: 2, title: 'Lab Report Deadline',        location: 'LEARN Assignment',    type: 'Deadline', startH: 14, startM: 0,  endH: 14, endM: 30, route: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics' },
   { id: 'th1', day: 3, title: 'Project workshop',           location: 'George Square G.03',  type: 'Workshop', startH: 10, startM: 0,  endH: 12, endM: 0  },
-  { id: 'th2', day: 3, title: 'Sociology Seminar',          location: 'Appleton Tower 1.05', type: 'Seminar',  startH: 15, startM: 0,  endH: 16, endM: 0  },
+  { id: 'th2', day: 3, title: 'Sociology Seminar',          location: 'Appleton Tower 1.05', type: 'Seminar',  startH: 15, startM: 0,  endH: 16, endM: 0,  route: '/courses/sociology' },
   { id: 'f1',  day: 4, title: 'Library return',             location: 'Main Library',        type: 'Personal', startH: 11, startM: 0,  endH: 11, endM: 30 },
-  { id: 'f2',  day: 4, title: 'Molecular Biology Tutorial', location: 'David Hume 1.11',     type: 'Class',    startH: 14, startM: 0,  endH: 15, endM: 0  },
+  { id: 'f2',  day: 4, title: 'Molecular Biology Tutorial', location: 'David Hume 1.11',     type: 'Class',    startH: 14, startM: 0,  endH: 15, endM: 0,  route: '/courses/molecular-biology' },
   { id: 'f3',  day: 4, title: 'Marketing Group Meeting',    location: 'Online',              type: 'Meeting',  startH: 16, startM: 30, endH: 17, endM: 30 },
   { id: 'su1', day: 6, title: 'Personal gym session',       location: 'Pleasance Gym',       type: 'Personal', startH: 18, startM: 0,  endH: 19, endM: 0  },
 ]
@@ -172,19 +174,24 @@ function EIcon({ type, size = 14 }: { type: EventType; size?: number }) {
 
 // ─── EventCard ────────────────────────────────────────────────────────────────
 
-function EventCard({ ev }: { ev: TEvent }) {
+function EventCard({ ev, onNavigate }: { ev: TEvent; onNavigate?: (r: string) => void }) {
   const s = TYPE_STYLES[ev.type]
   const t = topPx(ev.startH, ev.startM)
   const h = heightPx(ev.startH, ev.startM, ev.endH, ev.endM)
   const compact = h < 52
+  const clickable = !!ev.route
 
   return (
-    <div style={{
-      position: 'absolute', top: t, height: h, left: 3, right: 3,
-      background: s.bg, border: `1px solid ${s.border}`, borderRadius: 10,
-      padding: compact ? '4px 8px' : '8px 10px',
-      overflow: 'hidden', zIndex: 1,
-    }}>
+    <div
+      onClick={clickable && onNavigate ? () => onNavigate(ev.route!) : undefined}
+      style={{
+        position: 'absolute', top: t, height: h, left: 3, right: 3,
+        background: s.bg, border: `1px solid ${s.border}`, borderRadius: 10,
+        padding: compact ? '4px 8px' : '8px 10px',
+        overflow: 'hidden', zIndex: 1,
+        cursor: clickable ? 'pointer' : 'default',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5 }}>
         <span style={{ color: s.text, flexShrink: 0, marginTop: 1 }}>
           <EIcon type={ev.type} size={12} />
@@ -206,7 +213,7 @@ function EventCard({ ev }: { ev: TEvent }) {
 
 // ─── Timetable ────────────────────────────────────────────────────────────────
 
-function Timetable({ events }: { events: TEvent[] }) {
+function Timetable({ events, onNavigate }: { events: TEvent[]; onNavigate?: (r: string) => void }) {
   const totalH = HOURS.length * HOUR_HEIGHT
 
   return (
@@ -252,7 +259,7 @@ function Timetable({ events }: { events: TEvent[] }) {
             {DAYS.map((d, di) => (
               <div key={d.name} style={{ position: 'relative', borderRight: di < 6 ? '1px solid #E6ECF3' : 'none' }}>
                 {events.filter(e => e.day === di).map(ev => (
-                  <EventCard key={ev.id} ev={ev} />
+                  <EventCard key={ev.id} ev={ev} onNavigate={onNavigate} />
                 ))}
               </div>
             ))}
@@ -507,9 +514,18 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
   )
 }
 
+// ─── Agenda route lookup ──────────────────────────────────────────────────────
+
+const AGENDA_ROUTES: Record<string, string> = {
+  a1: '/courses/molecular-biology',
+  a2: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics',
+  a3: '/courses/sociology',
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
+  const navigate = useNavigate()
   const [events, setEvents] = useState<TEvent[]>(INITIAL_EVENTS)
   const [agenda, setAgenda] = useState<AgendaItem[]>(INITIAL_AGENDA)
   const [modalOpen, setModalOpen] = useState(false)
@@ -585,7 +601,7 @@ export default function Schedule() {
             </div>
           </div>
 
-          <Timetable events={events} />
+          <Timetable events={events} onNavigate={(r) => navigate(r)} />
         </div>
       </div>
 
@@ -601,6 +617,10 @@ export default function Schedule() {
           dateLabel="15 May Agenda"
           showTodayBadge
           items={toSharedItems(agenda)}
+          onItemClick={(item) => {
+            const r = AGENDA_ROUTES[String(item.id)]
+            if (r) navigate(r)
+          }}
           bottomAction={
             <button style={{ width: '100%', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0' }}>
               View full day →

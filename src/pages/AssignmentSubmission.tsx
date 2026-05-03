@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, ChevronRight,
   FileText, HardDrive, Tag, User, File,
   Check, Shield, Info, Upload, ZoomIn,
-  CheckCircle, Calendar, Hash,
+  CheckCircle, Calendar, Hash, BookOpen,
 } from 'lucide-react'
+import { getAssignmentBySlug } from '../data/courses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,65 +90,118 @@ function Stepper({ statuses }: { statuses: [StepStatus, StepStatus, StepStatus] 
   )
 }
 
-// ─── Assignment info card ─────────────────────────────────────────────────────
+// ─── Shared sub-components ────────────────────────────────────────────────────
 
-function InfoCard() {
+function NavRow({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
+  return <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>{left}{right}</div>
+}
+
+function SecondaryBtn({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
   return (
-    <div style={{
-      background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16,
-      boxShadow: '0 8px 24px rgba(15,23,42,0.04)',
-      padding: '18px 24px', marginBottom: 20,
-      display: 'flex', alignItems: 'flex-start', gap: 18,
-    }}>
-      <div style={{
-        width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-        background: '#EAF2FF',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, border: '1px solid #D7E0EA', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+      {children}
+    </button>
+  )
+}
+
+function PrimaryBtn({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+      {children}
+    </button>
+  )
+}
+
+function DocPreview() {
+  const lines = [55, 90, 85, 70, 90, 80, 60, 88]
+  return (
+    <div style={{ position: 'relative', width: 134, flexShrink: 0, height: 176, background: '#fff', border: '1px solid #E6ECF3', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ height: 9, background: '#CBD5E1', borderRadius: 3, margin: '14px 12px 0', width: '55%' }} />
+      {lines.map((w, i) => (
+        <div key={i} style={{ height: 7, background: '#E2E8F0', borderRadius: 3, margin: '7px 12px 0', width: `${w}%` }} />
+      ))}
+      <div style={{ position: 'absolute', bottom: 8, right: 8, width: 26, height: 26, background: 'rgba(0,0,0,0.32)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ZoomIn size={13} color="#fff" strokeWidth={1.75} />
+      </div>
+    </div>
+  )
+}
+
+function FileCheckList({ items }: { items: { label: string; value: string }[] }) {
+  return (
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 12 }}>File check</div>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'center', padding: '9px 0', borderBottom: i < items.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
+          <span style={{ fontSize: 13, color: '#48607A' }}>{item.label}</span>
+          <span style={{ fontSize: 12, color: '#7B8DA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.value}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#1F9D55', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Check size={10} color="#fff" strokeWidth={3} />
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#1F9D55', background: '#EAF8F0', borderRadius: 999, padding: '2px 8px', border: '1px solid #86EFAC', flexShrink: 0 }}>Pass</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Info card ────────────────────────────────────────────────────────────────
+
+interface AInfo {
+  courseSlug: string; courseTitle: string; courseCode: string; lecturer: string
+  title: string; description: string; due: string; weighting: string; status: string
+  fileFormats: string; maxFileSize: string; namingConvention: string; namingExample: string
+  mockFileName: string; mockFileSize: string; submissionId: string; checklist: string[]
+}
+
+function InfoCard({ info }: { info: AInfo }) {
+  const statusColor = info.status === 'In progress' ? '#F97316' : info.status === 'Submitted' ? '#1F9D55' : '#EF4444'
+  const statusBg    = info.status === 'In progress' ? '#FFF3E6' : info.status === 'Submitted' ? '#EAF8F0' : '#FFECEC'
+  const statusBdr   = info.status === 'In progress' ? '#FDBA74' : info.status === 'Submitted' ? '#86EFAC' : '#FECACA'
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '18px 24px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 18 }}>
+      <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <FileText size={20} strokeWidth={1.75} color="#2563EB" />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#0A254F', marginBottom: 2 }}>
-          Lab Report 2: Enzyme Kinetics
-        </div>
-        <div style={{ fontSize: 12, color: '#7B8DA5', marginBottom: 6 }}>Molecular Biology</div>
-        <div style={{ fontSize: 13, color: '#48607A', lineHeight: '20px' }}>
-          Investigate enzyme kinetics using spectrophotometric assays and analyse the results.
-        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#0A254F', marginBottom: 2 }}>{info.title}</div>
+        <div style={{ fontSize: 12, color: '#7B8DA5', marginBottom: 6 }}>{info.courseTitle}</div>
+        <div style={{ fontSize: 13, color: '#48607A', lineHeight: '20px' }}>{info.description}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 11, color: '#7B8DA5', marginBottom: 4 }}>Due date</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F' }}>Sun, 1 Jun, 17:00</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F' }}>{info.due}</div>
         </div>
         <div>
           <div style={{ fontSize: 11, color: '#7B8DA5', marginBottom: 4 }}>Weighting</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F' }}>15%</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F' }}>{info.weighting}</div>
         </div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#EF4444', background: '#FFECEC', borderRadius: 999, padding: '4px 12px', border: '1px solid #FECACA' }}>
-          Not submitted
+        <div style={{ fontSize: 12, fontWeight: 600, color: statusColor, background: statusBg, borderRadius: 999, padding: '4px 12px', border: `1px solid ${statusBdr}` }}>
+          {info.status}
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Right sidebar: Assignment summary ────────────────────────────────────────
+// ─── Sidebar cards ────────────────────────────────────────────────────────────
 
-const SUMMARY_ITEMS = [
-  { icon: <Calendar size={14} strokeWidth={1.75} />, label: 'Due date',        value: 'Sun, 1 Jun, 17:00'       },
-  { icon: <Hash size={14} strokeWidth={1.75} />,     label: 'Module code',     value: 'BIOL08019'               },
-  { icon: <User size={14} strokeWidth={1.75} />,     label: 'Submission type', value: 'Individual assignment'   },
-  { icon: <File size={14} strokeWidth={1.75} />,     label: 'File requirement',value: 'PDF or DOCX, max 20 MB' },
-  { icon: <User size={14} strokeWidth={1.75} />,     label: 'Lecturer',        value: 'Dr. Sarah Collins'       },
-]
-
-function AssignmentSummaryCard() {
+function AssignmentSummaryCard({ info }: { info: AInfo }) {
+  const items = [
+    { icon: <Calendar size={14} strokeWidth={1.75} />, label: 'Due date',        value: info.due },
+    { icon: <Hash size={14} strokeWidth={1.75} />,     label: 'Module code',     value: info.courseCode },
+    { icon: <User size={14} strokeWidth={1.75} />,     label: 'Submission type', value: info.fileFormats.split(' ')[0] + ' (individual)' },
+    { icon: <File size={14} strokeWidth={1.75} />,     label: 'File requirement', value: `${info.fileFormats}, max ${info.maxFileSize}` },
+    { icon: <User size={14} strokeWidth={1.75} />,     label: 'Lecturer',        value: info.lecturer },
+  ]
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '20px', marginBottom: 16 }}>
       <div style={{ fontSize: 15, fontWeight: 700, color: '#0A254F', marginBottom: 14 }}>Assignment summary</div>
-      {SUMMARY_ITEMS.map((item, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: i < SUMMARY_ITEMS.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: i < items.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
           <span style={{ color: '#7B8DA5', flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
           <div>
             <div style={{ fontSize: 11, color: '#7B8DA5', marginBottom: 2 }}>{item.label}</div>
@@ -159,9 +213,7 @@ function AssignmentSummaryCard() {
   )
 }
 
-// ─── Right sidebar: Progress ──────────────────────────────────────────────────
-
-const PROG_COLOR: Record<ProgStatus, string> = { 'Completed': '#1F9D55', 'In progress': '#2563EB', 'Pending': '#94A3B8' }
+const PROG_COLOR: Record<ProgStatus, string> = { Completed: '#1F9D55', 'In progress': '#2563EB', Pending: '#94A3B8' }
 
 function ProgressCard({ statuses }: { statuses: [ProgStatus, ProgStatus, ProgStatus] }) {
   return (
@@ -194,147 +246,41 @@ function ProgressCard({ statuses }: { statuses: [ProgStatus, ProgStatus, ProgSta
   )
 }
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
-
-function PdfBadge() {
-  return (
-    <div style={{ width: 38, height: 46, borderRadius: 7, flexShrink: 0, background: '#FEE2E2', border: '1px solid #FECACA', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-      <File size={14} strokeWidth={1.75} color="#EF4444" />
-      <span style={{ fontSize: 8, fontWeight: 800, color: '#EF4444', letterSpacing: '0.06em' }}>PDF</span>
-    </div>
-  )
-}
-
-function UploadedFileRow({ compact = false }: { compact?: boolean }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 12, marginBottom: compact ? 16 : 20 }}>
-      <PdfBadge />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F', marginBottom: 2 }}>LAB2_S1234567_AvaBrown.pdf</div>
-        <div style={{ fontSize: 11, color: '#7B8DA5' }}>PDF · 1.8 MB · Uploaded today, 10:24</div>
-      </div>
-      {!compact && (
-        <div style={{ display: 'flex', gap: 16, flexShrink: 0 }}>
-          <button style={{ fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Replace</button>
-          <button style={{ fontSize: 13, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove</button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function DocPreview() {
-  const lines = [55, 90, 85, 70, 90, 80, 60, 88]
-  return (
-    <div style={{ position: 'relative', width: 134, flexShrink: 0, height: 176, background: '#fff', border: '1px solid #E6ECF3', borderRadius: 8, overflow: 'hidden' }}>
-      <div style={{ height: 9, background: '#CBD5E1', borderRadius: 3, margin: '14px 12px 0', width: '55%' }} />
-      {lines.map((w, i) => (
-        <div key={i} style={{ height: 7, background: '#E2E8F0', borderRadius: 3, margin: '7px 12px 0', width: `${w}%` }} />
-      ))}
-      <div style={{ position: 'absolute', bottom: 8, right: 8, width: 26, height: 26, background: 'rgba(0,0,0,0.32)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <ZoomIn size={13} color="#fff" strokeWidth={1.75} />
-      </div>
-    </div>
-  )
-}
-
-function FileCheckList({ items }: { items: { label: string; value: string }[] }) {
-  return (
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 12 }}>File check</div>
-      {items.map((item, i) => (
-        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'center', padding: '9px 0', borderBottom: i < items.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
-          <span style={{ fontSize: 13, color: '#48607A' }}>{item.label}</span>
-          <span style={{ fontSize: 12, color: '#7B8DA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.value}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#1F9D55', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Check size={10} color="#fff" strokeWidth={3} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#1F9D55', background: '#EAF8F0', borderRadius: 999, padding: '2px 8px', border: '1px solid #86EFAC', flexShrink: 0 }}>
-              Pass
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function NavRow({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-      {left}
-      {right}
-    </div>
-  )
-}
-
-function SecondaryBtn({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, border: '1px solid #D7E0EA', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      {children}
-    </button>
-  )
-}
-
-function PrimaryBtn({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-      {children}
-    </button>
-  )
-}
-
 // ─── Step 1: Submission requirements ─────────────────────────────────────────
 
-const REQUIREMENTS = [
-  { icon: <FileText size={16} strokeWidth={1.75} />, label: 'Accepted formats',    value: 'PDF or DOCX'              },
-  { icon: <HardDrive size={16} strokeWidth={1.75} />, label: 'Max file size',      value: '20 MB'                    },
-  { icon: <Tag size={16} strokeWidth={1.75} />,       label: 'File naming format', value: 'LAB2_S1234567_AvaBrown'   },
-  { icon: <User size={16} strokeWidth={1.75} />,      label: 'Submission type',    value: 'Individual assignment'    },
-]
-
-const CHECKLIST = [
-  'Include your student number on the first page',
-  'Combine your report into one file only',
-  'Check that all figures and tables are visible',
-  'Make sure the file opens correctly before upload',
-]
-
-function RequirementStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function RequirementStep({ info, onNext, onBack }: { info: AInfo; onNext: () => void; onBack: () => void }) {
+  const reqs = [
+    { icon: <FileText size={16} strokeWidth={1.75} />, label: 'Accepted formats',    value: info.fileFormats },
+    { icon: <HardDrive size={16} strokeWidth={1.75} />, label: 'Max file size',      value: info.maxFileSize },
+    { icon: <Tag size={16} strokeWidth={1.75} />,       label: 'File naming format', value: info.namingConvention },
+    { icon: <User size={16} strokeWidth={1.75} />,      label: 'Submission type',    value: info.fileFormats.includes('PDF') ? 'Individual submission' : 'Group submission' },
+  ]
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '24px' }}>
-      {/* Card header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
         <span style={{ fontSize: 17, fontWeight: 700, color: '#0A254F' }}>1. Submission requirements</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>
-          In progress
-        </span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>In progress</span>
       </div>
 
-      {/* Before you begin */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#0A254F', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}>
           Before you begin
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 12 }}>
-          {REQUIREMENTS.map((r, i) => (
+          {reqs.map((r, i) => (
             <div key={i} style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 12, padding: '14px 16px' }}>
               <span style={{ color: '#2563EB', display: 'block', marginBottom: 10 }}>{r.icon}</span>
-              <div style={{ fontSize: 11, color: '#7B8DA5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                {r.label}
-              </div>
+              <div style={{ fontSize: 11, color: '#7B8DA5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{r.label}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F' }}>{r.value}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Checklist */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 4 }}>Checklist</div>
-        {CHECKLIST.map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: i < CHECKLIST.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
+        {info.checklist.map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: i < info.checklist.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
             <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#1F9D55', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
               <Check size={11} color="#fff" strokeWidth={2.5} />
             </div>
@@ -343,7 +289,6 @@ function RequirementStep({ onNext, onBack }: { onNext: () => void; onBack: () =>
         ))}
       </div>
 
-      {/* Academic integrity */}
       <div style={{ background: '#EAF2FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
         <Shield size={18} strokeWidth={1.75} color="#2563EB" style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
@@ -354,7 +299,6 @@ function RequirementStep({ onNext, onBack }: { onNext: () => void; onBack: () =>
         </div>
       </div>
 
-      {/* Replacement note */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#7B8DA5', marginBottom: 24 }}>
         <Info size={13} strokeWidth={1.75} color="#7B8DA5" />
         <span>You may replace your uploaded file until the deadline.</span>
@@ -370,23 +314,41 @@ function RequirementStep({ onNext, onBack }: { onNext: () => void; onBack: () =>
 
 // ─── Step 2: Upload + Preview ─────────────────────────────────────────────────
 
-const STEP2_CHECKS = [
-  { label: 'File format',       value: 'PDF is accepted'      },
-  { label: 'File size',         value: '1.8 MB of 20 MB max' },
-  { label: 'Naming convention', value: 'LAB2_S1234567_AvaBrown.pdf' },
-]
+function UploadedFileRow({ info, compact = false }: { info: AInfo; compact?: boolean }) {
+  const isZip = info.mockFileName.endsWith('.zip')
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 12, marginBottom: compact ? 16 : 20 }}>
+      <div style={{ width: 38, height: 46, borderRadius: 7, flexShrink: 0, background: isZip ? '#FEF3C7' : '#FEE2E2', border: `1px solid ${isZip ? '#FDE68A' : '#FECACA'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+        <File size={14} strokeWidth={1.75} color={isZip ? '#D97706' : '#EF4444'} />
+        <span style={{ fontSize: 8, fontWeight: 800, color: isZip ? '#D97706' : '#EF4444', letterSpacing: '0.06em' }}>{isZip ? 'ZIP' : 'PDF'}</span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F', marginBottom: 2 }}>{info.mockFileName}</div>
+        <div style={{ fontSize: 11, color: '#7B8DA5' }}>{isZip ? 'ZIP' : 'PDF'} · {info.mockFileSize} · Uploaded today, 10:24</div>
+      </div>
+      {!compact && (
+        <div style={{ display: 'flex', gap: 16, flexShrink: 0 }}>
+          <button style={{ fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Replace</button>
+          <button style={{ fontSize: 13, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove</button>
+        </div>
+      )}
+    </div>
+  )
+}
 
-function UploadPreviewStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function UploadPreviewStep({ info, onNext, onBack }: { info: AInfo; onNext: () => void; onBack: () => void }) {
+  const checks = [
+    { label: 'File format',       value: `${info.fileFormats.split(' ')[0]} is accepted` },
+    { label: 'File size',         value: `${info.mockFileSize} of ${info.maxFileSize} max` },
+    { label: 'Naming convention', value: info.mockFileName },
+  ]
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <span style={{ fontSize: 17, fontWeight: 700, color: '#0A254F' }}>2. Upload + Preview</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>
-          In progress
-        </span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>In progress</span>
       </div>
 
-      {/* Upload dropzone */}
       <div style={{ border: '1.5px dashed #93C5FD', borderRadius: 14, background: '#F8FBFF', height: 92, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}>
         <Upload size={22} strokeWidth={1.75} color="#93C5FD" />
         <div style={{ fontSize: 13, color: '#7B8DA5' }}>
@@ -395,15 +357,13 @@ function UploadPreviewStep({ onNext, onBack }: { onNext: () => void; onBack: () 
         </div>
       </div>
 
-      <UploadedFileRow />
+      <UploadedFileRow info={info} />
 
-      {/* Preview + checks */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
         <DocPreview />
-        <FileCheckList items={STEP2_CHECKS} />
+        <FileCheckList items={checks} />
       </div>
 
-      {/* Info note */}
       <div style={{ fontSize: 12, color: '#7B8DA5', background: '#F9FBFF', border: '1px solid #EEF2F7', borderRadius: 10, padding: '10px 14px', marginBottom: 24 }}>
         Only the first page is shown. The full document will be available after submission.
       </div>
@@ -418,24 +378,20 @@ function UploadPreviewStep({ onNext, onBack }: { onNext: () => void; onBack: () 
 
 // ─── Step 3: Submit Final ─────────────────────────────────────────────────────
 
-const STEP3_CHECKS = [
-  { label: 'File format',       value: 'PDF is accepted'                   },
-  { label: 'File size',         value: '1.8 MB of 20 MB max'              },
-  { label: 'Naming convention', value: 'LAB2_S1234567_AvaBrown.pdf'        },
-  { label: 'Preview available', value: 'First page generated successfully' },
-]
-
-function SubmitFinalStep({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void }) {
+function SubmitFinalStep({ info, onBack, onSubmit }: { info: AInfo; onBack: () => void; onSubmit: () => void }) {
+  const checks = [
+    { label: 'File format',       value: `${info.fileFormats.split(' ')[0]} is accepted` },
+    { label: 'File size',         value: `${info.mockFileSize} of ${info.maxFileSize} max` },
+    { label: 'Naming convention', value: info.mockFileName },
+    { label: 'Preview available', value: 'First page generated successfully' },
+  ]
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <span style={{ fontSize: 17, fontWeight: 700, color: '#0A254F' }}>3. Submit</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>
-          In progress
-        </span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>In progress</span>
       </div>
 
-      {/* Submission ready banner */}
       <div style={{ background: '#EAF8F0', border: '1px solid #86EFAC', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
         <CheckCircle size={20} strokeWidth={1.75} color="#1F9D55" style={{ flexShrink: 0 }} />
         <div>
@@ -444,16 +400,13 @@ function SubmitFinalStep({ onBack, onSubmit }: { onBack: () => void; onSubmit: (
         </div>
       </div>
 
-      {/* File summary */}
-      <UploadedFileRow compact />
+      <UploadedFileRow info={info} compact />
 
-      {/* Preview + final check */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 18 }}>
         <DocPreview />
-        <FileCheckList items={STEP3_CHECKS} />
+        <FileCheckList items={checks} />
       </div>
 
-      {/* Declaration */}
       <div style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
         <div style={{ width: 18, height: 18, borderRadius: 4, background: '#1B3FA0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
           <Check size={11} color="#fff" strokeWidth={2.5} />
@@ -466,7 +419,6 @@ function SubmitFinalStep({ onBack, onSubmit }: { onBack: () => void; onSubmit: (
         </div>
       </div>
 
-      {/* Info note */}
       <div style={{ display: 'flex', gap: 10, padding: '10px 14px', background: '#EAF2FF', border: '1px solid #BFDBFE', borderRadius: 10, marginBottom: 24 }}>
         <Info size={14} strokeWidth={1.75} color="#2563EB" style={{ flexShrink: 0, marginTop: 1 }} />
         <span style={{ fontSize: 12, color: '#48607A', lineHeight: '20px' }}>
@@ -484,40 +436,31 @@ function SubmitFinalStep({ onBack, onSubmit }: { onBack: () => void; onSubmit: (
 
 // ─── Success state ────────────────────────────────────────────────────────────
 
-const SUCCESS_DETAILS = [
-  { label: 'Submission ID', value: 'SUB-2025-BIOL08019-002'         },
-  { label: 'Submitted',     value: 'Today, 10:31'                    },
-  { label: 'File',          value: 'LAB2_S1234567_AvaBrown.pdf'      },
-  { label: 'Course',        value: 'Molecular Biology'               },
-  { label: 'Assignment',    value: 'Lab Report 2: Enzyme Kinetics'   },
-]
-
-function SuccessState({ onDashboard }: { onDashboard: () => void }) {
+function SuccessState({ info, onDashboard }: { info: AInfo; onDashboard: () => void }) {
+  const details = [
+    { label: 'Submission ID', value: info.submissionId },
+    { label: 'Submitted',     value: 'Today, 10:31' },
+    { label: 'File',          value: info.mockFileName },
+    { label: 'Course',        value: info.courseTitle },
+    { label: 'Assignment',    value: info.title },
+  ]
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '44px 32px', textAlign: 'center' }}>
-      {/* Large check circle */}
       <div style={{ width: 68, height: 68, borderRadius: '50%', background: '#EAF8F0', border: '2px solid #86EFAC', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 22px' }}>
         <Check size={30} color="#1F9D55" strokeWidth={2.5} />
       </div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0A254F', marginBottom: 6 }}>Submission successful</div>
+      <div style={{ fontSize: 13, color: '#7B8DA5', marginBottom: 28 }}>Your assignment has been submitted successfully.</div>
 
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0A254F', marginBottom: 6 }}>
-        Submission successful
-      </div>
-      <div style={{ fontSize: 13, color: '#7B8DA5', marginBottom: 28 }}>
-        Your assignment has been submitted successfully.
-      </div>
-
-      {/* Details */}
       <div style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 14, padding: '18px 24px', maxWidth: 420, margin: '0 auto 28px', textAlign: 'left' }}>
-        {SUCCESS_DETAILS.map((row, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '7px 0', borderBottom: i < SUCCESS_DETAILS.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
+        {details.map((row, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '7px 0', borderBottom: i < details.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
             <span style={{ fontSize: 12, color: '#7B8DA5', flexShrink: 0 }}>{row.label}</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0A254F', textAlign: 'right' }}>{row.value}</span>
           </div>
         ))}
       </div>
 
-      {/* Actions */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
         <PrimaryBtn onClick={onDashboard}>Return to Dashboard</PrimaryBtn>
         <SecondaryBtn>View assignment receipt</SecondaryBtn>
@@ -526,11 +469,57 @@ function SuccessState({ onDashboard }: { onDashboard: () => void }) {
   )
 }
 
+// ─── Not found ────────────────────────────────────────────────────────────────
+
+function NotFound({ courseSlug, onBack }: { courseSlug: string; onBack: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16 }}>
+      <BookOpen size={40} strokeWidth={1.25} style={{ color: '#D7E0EA' }} />
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0A254F', margin: 0 }}>Assignment not found</h2>
+      <p style={{ fontSize: 14, color: '#7B8DA5', margin: 0 }}>This assignment doesn't exist or the link is incorrect.</p>
+      <button
+        onClick={onBack}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#fff', background: '#1B3FA0', border: 'none', borderRadius: 10, padding: '10px 20px', cursor: 'pointer' }}
+      >
+        <ArrowLeft size={14} strokeWidth={2} />
+        Back to Course
+      </button>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AssignmentSubmission() {
   const navigate = useNavigate()
+  const { courseSlug = '', assignmentSlug = '' } = useParams<{ courseSlug: string; assignmentSlug: string }>()
   const [step, setStep] = useState<Step>(1)
+
+  const { course, assignment } = getAssignmentBySlug(courseSlug, assignmentSlug)
+
+  if (!course || !assignment) {
+    return <NotFound courseSlug={courseSlug} onBack={() => navigate(`/courses/${courseSlug}`)} />
+  }
+
+  const info: AInfo = {
+    courseSlug,
+    courseTitle: course.title,
+    courseCode: course.code,
+    lecturer: course.lecturer,
+    title: assignment.title,
+    description: assignment.description,
+    due: assignment.due,
+    weighting: assignment.weighting,
+    status: assignment.status,
+    fileFormats: assignment.fileFormats,
+    maxFileSize: assignment.maxFileSize,
+    namingConvention: assignment.namingConvention,
+    namingExample: assignment.namingExample,
+    mockFileName: assignment.mockFileName,
+    mockFileSize: assignment.mockFileSize,
+    submissionId: assignment.submissionId,
+    checklist: assignment.checklist,
+  }
 
   const stepperStatuses = getStepperStatuses(step)
   const progressStatuses = getProgressStatuses(step)
@@ -540,7 +529,6 @@ export default function AssignmentSubmission() {
       {/* Center: scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         <div style={{ padding: '32px 32px 48px' }}>
-          {/* Title */}
           <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 8 }}>
             Assignment Submission
           </h1>
@@ -551,47 +539,46 @@ export default function AssignmentSubmission() {
               Courses
             </button>
             <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
-            <button onClick={() => navigate('/courses/biol08019')} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              Molecular Biology
+            <button onClick={() => navigate(`/courses/${courseSlug}`)} style={{ fontSize: 13, color: '#2563EB', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              {course.title}
             </button>
             <ChevronRight size={13} strokeWidth={1.75} color="#B4C0D0" />
             <span style={{ fontSize: 13, color: '#7B8DA5' }}>Assignments</span>
           </div>
 
-          {/* Info card (always visible) */}
-          <InfoCard />
-
-          {/* Stepper (always visible) */}
+          <InfoCard info={info} />
           <Stepper statuses={stepperStatuses} />
 
-          {/* Step content */}
           {step === 1 && (
             <RequirementStep
+              info={info}
               onNext={() => setStep(2)}
-              onBack={() => navigate('/courses/biol08019')}
+              onBack={() => navigate(`/courses/${courseSlug}`)}
             />
           )}
           {step === 2 && (
             <UploadPreviewStep
+              info={info}
               onNext={() => setStep(3)}
               onBack={() => setStep(1)}
             />
           )}
           {step === 3 && (
             <SubmitFinalStep
+              info={info}
               onBack={() => setStep(2)}
               onSubmit={() => setStep('success')}
             />
           )}
           {step === 'success' && (
-            <SuccessState onDashboard={() => navigate('/dashboard')} />
+            <SuccessState info={info} onDashboard={() => navigate('/dashboard')} />
           )}
         </div>
       </div>
 
-      {/* Right sidebar: fixed, non-scrolling */}
+      {/* Right sidebar */}
       <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <AssignmentSummaryCard />
+        <AssignmentSummaryCard info={info} />
         <ProgressCard statuses={progressStatuses} />
       </div>
     </div>
