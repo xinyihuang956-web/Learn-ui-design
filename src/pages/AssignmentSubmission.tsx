@@ -5,8 +5,10 @@ import {
   FileText, HardDrive, Tag, User, File,
   Check, Shield, Info, Upload, ZoomIn,
   CheckCircle, Calendar, Hash, BookOpen,
+  ClipboardList, Archive, Download, BookMarked, ExternalLink,
 } from 'lucide-react'
 import { getAssignmentBySlug } from '../data/courses'
+import type { AssignmentResource, ResourceIconType } from '../data/courses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -154,6 +156,86 @@ interface AInfo {
   title: string; description: string; due: string; weighting: string; status: string
   fileFormats: string; maxFileSize: string; namingConvention: string; namingExample: string
   mockFileName: string; mockFileSize: string; submissionId: string; checklist: string[]
+  resources: AssignmentResource[]
+}
+
+// ─── Resource helpers ─────────────────────────────────────────────────────────
+
+function getResourceIcon(icon: ResourceIconType, size = 15) {
+  const p = { size, strokeWidth: 1.75, color: '#2563EB' } as const
+  if (icon === 'ClipboardList') return <ClipboardList {...p} />
+  if (icon === 'Archive')       return <Archive {...p} />
+  if (icon === 'Download')      return <Download {...p} />
+  if (icon === 'BookOpen')      return <BookOpen {...p} />
+  if (icon === 'BookMarked')    return <BookMarked {...p} />
+  return <FileText {...p} />
+}
+
+function ResourcesSection({ resources }: { resources: AssignmentResource[] }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 3 }}>Assignment resources</div>
+      <div style={{ fontSize: 12, color: '#7B8DA5', marginBottom: 12 }}>
+        Review the brief, marking criteria, and supporting materials before you submit.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {resources.map((r) => (
+          <div
+            key={r.id}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 11,
+              padding: '11px 13px',
+              background: '#F9FBFF',
+              border: '1px solid #E6ECF3',
+              borderRadius: 10,
+              cursor: 'pointer',
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#93C5FD')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#E6ECF3')}
+          >
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {getResourceIcon(r.icon)}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0A254F', marginBottom: 1 }}>{r.title}</div>
+              <div style={{ fontSize: 11, color: '#7B8DA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.description}</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 7px', letterSpacing: '0.03em' }}>{r.type}</span>
+              <ExternalLink size={12} strokeWidth={1.75} color="#B4C0D0" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CompactResourceLinks({ resources }: { resources: AssignmentResource[] }) {
+  const top3 = resources.filter(r => ['brief', 'rubric', 'past-example'].includes(r.id))
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '18px 20px' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 12 }}>Useful resources</div>
+      {top3.map((r, i) => (
+        <div
+          key={r.id}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 0',
+            borderBottom: i < top3.length - 1 ? '1px solid #EEF2F7' : 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {getResourceIcon(r.icon, 13)}
+          </div>
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#0A254F' }}>{r.title}</span>
+          <ExternalLink size={13} strokeWidth={1.75} color="#D7E0EA" />
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function InfoCard({ info }: { info: AInfo }) {
@@ -262,6 +344,8 @@ function RequirementStep({ info, onNext, onBack }: { info: AInfo; onNext: () => 
         <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>In progress</span>
       </div>
 
+      <ResourcesSection resources={info.resources} />
+
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#0A254F', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}>
           Before you begin
@@ -275,18 +359,6 @@ function RequirementStep({ info, onNext, onBack }: { info: AInfo; onNext: () => 
             </div>
           ))}
         </div>
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 4 }}>Checklist</div>
-        {info.checklist.map((item, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: i < info.checklist.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#1F9D55', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-              <Check size={11} color="#fff" strokeWidth={2.5} />
-            </div>
-            <span style={{ fontSize: 13, color: '#48607A', lineHeight: '22px' }}>{item}</span>
-          </div>
-        ))}
       </div>
 
       <div style={{ background: '#EAF2FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 14 }}>
@@ -426,6 +498,14 @@ function SubmitFinalStep({ info, onBack, onSubmit }: { info: AInfo; onBack: () =
         </span>
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+        <Info size={13} strokeWidth={1.75} color="#7B8DA5" style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: '#7B8DA5' }}>Need to check something before submitting?</span>
+        <button style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>View brief</button>
+        <span style={{ fontSize: 12, color: '#D7E0EA' }}>·</span>
+        <button style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>View rubric</button>
+      </div>
+
       <NavRow
         left={<SecondaryBtn onClick={onBack}><ArrowLeft size={15} strokeWidth={1.75} />Back to upload</SecondaryBtn>}
         right={<PrimaryBtn onClick={onSubmit}>Submit assignment<ArrowRight size={15} strokeWidth={1.75} /></PrimaryBtn>}
@@ -519,6 +599,7 @@ export default function AssignmentSubmission() {
     mockFileSize: assignment.mockFileSize,
     submissionId: assignment.submissionId,
     checklist: assignment.checklist,
+    resources: assignment.resources,
   }
 
   const stepperStatuses = getStepperStatuses(step)
@@ -580,6 +661,9 @@ export default function AssignmentSubmission() {
       <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <AssignmentSummaryCard info={info} />
         <ProgressCard statuses={progressStatuses} />
+        {step !== 1 && step !== 'success' && (
+          <CompactResourceLinks resources={info.resources} />
+        )}
       </div>
     </div>
   )

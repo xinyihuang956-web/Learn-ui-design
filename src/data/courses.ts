@@ -2,9 +2,19 @@ export type MaterialStatus = 'New' | 'Updated' | 'Available' | 'Coming soon' | n
 export type MaterialType = 'slides' | 'seminar' | 'recording' | 'reading'
 export type AssignmentStatus = 'Not submitted' | 'In progress' | 'Submitted'
 export type UpdateIconType = 'file' | 'clipboard' | 'megaphone' | 'book' | 'message'
+export type ResourceIconType = 'FileText' | 'ClipboardList' | 'Archive' | 'Download' | 'BookOpen' | 'BookMarked'
 
 export interface CourseMaterial { type: MaterialType; label: string; status: MaterialStatus }
 export interface CourseWeek { week: string; title: string; dates: string; materials: CourseMaterial[] }
+
+export interface AssignmentResource {
+  id: string
+  title: string
+  description: string
+  type: string
+  actionLabel: string
+  icon: ResourceIconType
+}
 
 export interface CourseAssignment {
   slug: string
@@ -22,6 +32,7 @@ export interface CourseAssignment {
   mockFileSize: string
   submissionId: string
   checklist: string[]
+  resources: AssignmentResource[]
 }
 
 export interface CourseAnnouncement {
@@ -87,6 +98,57 @@ const STD_CHECKLIST = [
   'Make sure the file opens correctly before upload',
 ]
 
+const STD_RESOURCES: AssignmentResource[] = [
+  {
+    id: 'brief',
+    title: 'Assignment brief',
+    description: 'Full coursework brief and task instructions',
+    type: 'PDF',
+    actionLabel: 'View brief',
+    icon: 'FileText',
+  },
+  {
+    id: 'rubric',
+    title: 'Marking rubric',
+    description: 'Assessment criteria and grade descriptors',
+    type: 'PDF',
+    actionLabel: 'View rubric',
+    icon: 'ClipboardList',
+  },
+  {
+    id: 'past-example',
+    title: 'Past paper / example report',
+    description: 'Previous example for understanding expected structure',
+    type: 'PDF',
+    actionLabel: 'View example',
+    icon: 'Archive',
+  },
+  {
+    id: 'template',
+    title: 'Submission template',
+    description: 'Editable template with required structure',
+    type: 'DOCX',
+    actionLabel: 'Download template',
+    icon: 'Download',
+  },
+  {
+    id: 'referencing',
+    title: 'Referencing guide',
+    description: 'Citation and academic referencing requirements',
+    type: 'Guide',
+    actionLabel: 'Open guide',
+    icon: 'BookOpen',
+  },
+  {
+    id: 'slides',
+    title: 'Related lecture slides',
+    description: 'Relevant lecture materials for this assignment',
+    type: 'PDF',
+    actionLabel: 'View slides',
+    icon: 'BookMarked',
+  },
+]
+
 // ─── Course data ──────────────────────────────────────────────────────────────
 
 export const COURSES: Course[] = [
@@ -131,6 +193,7 @@ export const COURSES: Course[] = [
         mockFileName: 'LAB2_S1234567_AvaBrown.pdf', mockFileSize: '1.8 MB',
         submissionId: 'SUB-2025-BIOL08019-002',
         checklist: STD_CHECKLIST,
+        resources: STD_RESOURCES,
       },
       {
         slug: 'essay-signal-transduction-pathways',
@@ -148,6 +211,7 @@ export const COURSES: Course[] = [
           'Reference all sources using the required citation style',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
@@ -217,6 +281,7 @@ export const COURSES: Course[] = [
           'Use Harvard referencing for all citations',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
       {
         slug: 'seminar-reflection-portfolio',
@@ -229,6 +294,7 @@ export const COURSES: Course[] = [
         mockFileName: 'SOCI_PORTFOLIO_S1234567_AvaBrown.pdf', mockFileSize: '2.1 MB',
         submissionId: 'SUB-2025-SOCI08001-002',
         checklist: STD_CHECKLIST,
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
@@ -298,6 +364,7 @@ export const COURSES: Course[] = [
           'Check that all images and charts are embedded',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
       {
         slug: 'consumer-insight-report',
@@ -310,6 +377,7 @@ export const COURSES: Course[] = [
         mockFileName: 'MKTG_REPORT_S1234567_AvaBrown.pdf', mockFileSize: '2.0 MB',
         submissionId: 'SUB-2025-MGTS08018-002',
         checklist: STD_CHECKLIST,
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
@@ -379,6 +447,7 @@ export const COURSES: Course[] = [
           'Cite all secondary sources using Chicago citation style',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
       {
         slug: 'comparative-history-essay',
@@ -396,6 +465,7 @@ export const COURSES: Course[] = [
           'Use Chicago citation style for all references',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
@@ -465,6 +535,7 @@ export const COURSES: Course[] = [
           'Check that all interactive elements function correctly',
           'Make sure the ZIP file is complete and opens without errors',
         ],
+        resources: STD_RESOURCES,
       },
       {
         slug: 'reflective-design-report',
@@ -482,6 +553,7 @@ export const COURSES: Course[] = [
           'Include at least three design iterations with screenshots',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
@@ -551,6 +623,7 @@ export const COURSES: Course[] = [
           'Include all required datasets within the ZIP file',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
       {
         slug: 'machine-learning-report',
@@ -568,6 +641,7 @@ export const COURSES: Course[] = [
           'Include results tables and evaluation metrics',
           'Make sure the file opens correctly before upload',
         ],
+        resources: STD_RESOURCES,
       },
     ],
     announcements: [
