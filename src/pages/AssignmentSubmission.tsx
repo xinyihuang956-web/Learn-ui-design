@@ -171,7 +171,46 @@ function getResourceIcon(icon: ResourceIconType, size = 15) {
   return <FileText {...p} />
 }
 
-function ResourcesSection({ resources }: { resources: AssignmentResource[] }) {
+function ResourcePreviewModal({ resource, onClose }: { resource: AssignmentResource; onClose: () => void }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,37,79,0.18)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.12)', width: '100%', maxWidth: 400, padding: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 20 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {getResourceIcon(resource.icon, 20)}
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0A254F' }}>{resource.title}</div>
+            <div style={{ fontSize: 12, color: '#7B8DA5', marginTop: 2 }}>{resource.description}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '3px 10px' }}>{resource.type}</span>
+        </div>
+        <div style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#7B8DA5', marginBottom: 4 }}>Prototype placeholder</div>
+          <div style={{ fontSize: 13, color: '#48607A', lineHeight: '20px' }}>
+            This is a prototype placeholder for this resource. In the live system, clicking "{resource.actionLabel}" would open or download the actual file.
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ResourcesSection({ resources, onOpen }: { resources: AssignmentResource[]; onOpen: (r: AssignmentResource) => void }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: '#0A254F', marginBottom: 3 }}>Assignment resources</div>
@@ -182,6 +221,7 @@ function ResourcesSection({ resources }: { resources: AssignmentResource[] }) {
         {resources.map((r) => (
           <div
             key={r.id}
+            onClick={() => onOpen(r)}
             style={{
               display: 'flex', alignItems: 'center', gap: 11,
               padding: '11px 13px',
@@ -212,7 +252,7 @@ function ResourcesSection({ resources }: { resources: AssignmentResource[] }) {
   )
 }
 
-function CompactResourceLinks({ resources }: { resources: AssignmentResource[] }) {
+function CompactResourceLinks({ resources, onOpen }: { resources: AssignmentResource[]; onOpen: (r: AssignmentResource) => void }) {
   const top3 = resources.filter(r => ['brief', 'rubric', 'past-example'].includes(r.id))
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '18px 20px' }}>
@@ -220,6 +260,7 @@ function CompactResourceLinks({ resources }: { resources: AssignmentResource[] }
       {top3.map((r, i) => (
         <div
           key={r.id}
+          onClick={() => onOpen(r)}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '9px 0',
@@ -330,7 +371,7 @@ function ProgressCard({ statuses }: { statuses: [ProgStatus, ProgStatus, ProgSta
 
 // ─── Step 1: Submission requirements ─────────────────────────────────────────
 
-function RequirementStep({ info, onNext, onBack }: { info: AInfo; onNext: () => void; onBack: () => void }) {
+function RequirementStep({ info, onNext, onBack, onOpen }: { info: AInfo; onNext: () => void; onBack: () => void; onOpen: (r: AssignmentResource) => void }) {
   const reqs = [
     { icon: <FileText size={16} strokeWidth={1.75} />, label: 'Accepted formats',    value: info.fileFormats },
     { icon: <HardDrive size={16} strokeWidth={1.75} />, label: 'Max file size',      value: info.maxFileSize },
@@ -344,7 +385,7 @@ function RequirementStep({ info, onNext, onBack }: { info: AInfo; onNext: () => 
         <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EAF2FF', borderRadius: 999, padding: '2px 10px' }}>In progress</span>
       </div>
 
-      <ResourcesSection resources={info.resources} />
+      <ResourcesSection resources={info.resources} onOpen={onOpen} />
 
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#0A254F', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}>
@@ -574,6 +615,7 @@ export default function AssignmentSubmission() {
   const navigate = useNavigate()
   const { courseSlug = '', assignmentSlug = '' } = useParams<{ courseSlug: string; assignmentSlug: string }>()
   const [step, setStep] = useState<Step>(1)
+  const [selectedResource, setSelectedResource] = useState<AssignmentResource | null>(null)
 
   const { course, assignment } = getAssignmentBySlug(courseSlug, assignmentSlug)
 
@@ -635,6 +677,7 @@ export default function AssignmentSubmission() {
               info={info}
               onNext={() => setStep(2)}
               onBack={() => navigate(`/courses/${courseSlug}`)}
+              onOpen={setSelectedResource}
             />
           )}
           {step === 2 && (
@@ -662,9 +705,13 @@ export default function AssignmentSubmission() {
         <AssignmentSummaryCard info={info} />
         <ProgressCard statuses={progressStatuses} />
         {step !== 1 && step !== 'success' && (
-          <CompactResourceLinks resources={info.resources} />
+          <CompactResourceLinks resources={info.resources} onOpen={setSelectedResource} />
         )}
       </div>
+
+      {selectedResource && (
+        <ResourcePreviewModal resource={selectedResource} onClose={() => setSelectedResource(null)} />
+      )}
     </div>
   )
 }

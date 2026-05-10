@@ -4,7 +4,7 @@ import {
   ArrowLeft, User, Building2, Hash, CalendarDays,
   FileText, Video, BookOpen, ClipboardList, ChevronRight,
   Clock, MapPin, Users, Megaphone, ExternalLink,
-  BookMarked, GraduationCap, BadgeInfo, RefreshCw, MessageSquare,
+  BookMarked, GraduationCap, BadgeInfo, RefreshCw, MessageSquare, X,
 } from 'lucide-react'
 import StatusPill from '../components/StatusPill'
 import {
@@ -103,7 +103,7 @@ function MetaRow({ icon, children }: { icon: React.ReactNode; children: React.Re
 
 // ─── Weekly Materials ─────────────────────────────────────────────────────────
 
-function WeekRow({ row }: { row: CourseWeek }) {
+function WeekRow({ row, onOpen }: { row: CourseWeek; onOpen: (mat: MaterialItem) => void }) {
   return (
     <div className="border border-[#E6ECF3] rounded-[14px] p-4 mb-3">
       <div className="flex items-center justify-between mb-3">
@@ -122,6 +122,7 @@ function WeekRow({ row }: { row: CourseWeek }) {
           return (
             <button
               key={i}
+              onClick={() => onOpen({ label: mat.label, type: mat.type })}
               className="flex flex-col items-start gap-1.5 px-3 py-2.5 rounded-xl border border-[#E6ECF3] bg-[#F9FBFF] hover:bg-[#EAF2FF] hover:border-[#93C5FD] transition-all text-left group"
             >
               <span className="text-[#7B8DA5] group-hover:text-[#2563EB] transition-colors">
@@ -187,10 +188,13 @@ function AssignmentRow({
 
 // ─── Announcement row ─────────────────────────────────────────────────────────
 
-function AnnouncementRow({ a, last }: { a: CourseAnnouncement; last: boolean }) {
+function AnnouncementRow({ a, last, onOpen }: { a: CourseAnnouncement; last: boolean; onOpen: (a: CourseAnnouncement) => void }) {
   return (
     <>
-      <div className="flex items-start gap-4 px-6 py-4">
+      <div
+        className="flex items-start gap-4 px-6 py-4 cursor-pointer hover:bg-[#F9FBFF] transition-colors"
+        onClick={() => onOpen(a)}
+      >
         <span className={`mt-2 w-2 h-2 rounded-full shrink-0 block ${a.isNew ? 'bg-[#2563EB]' : ''}`} />
         <div
           className="shrink-0 flex items-center justify-center rounded-full text-white text-[12px] font-bold"
@@ -256,6 +260,85 @@ function RecentUpdateRow({ u, last }: { u: CourseRecentUpdate; last: boolean }) 
   )
 }
 
+// ─── Material preview modal ───────────────────────────────────────────────────
+
+interface MaterialItem { label: string; type: MaterialType }
+
+function MaterialPreviewModal({ mat, onClose }: { mat: MaterialItem; onClose: () => void }) {
+  const typeLabel: Record<MaterialType, string> = { slides: 'Slides', seminar: 'Seminar sheet', recording: 'Recording', reading: 'Reading' }
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,37,79,0.18)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.12)', width: '100%', maxWidth: 400, padding: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563EB' }}>
+              {getMaterialIcon(mat.type)}
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0A254F' }}>{mat.label}</div>
+              <div style={{ fontSize: 12, color: '#7B8DA5', marginTop: 2 }}>{typeLabel[mat.type]}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E6ECF3', background: '#F9FBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7B8DA5', flexShrink: 0 }}>
+            <X size={15} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div style={{ background: '#F9FBFF', border: '1px solid #E6ECF3', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#7B8DA5', marginBottom: 4 }}>Prototype placeholder</div>
+          <div style={{ fontSize: 13, color: '#48607A', lineHeight: '20px' }}>
+            This is a prototype placeholder for this resource. In the live system, clicking this would open or download the actual {typeLabel[mat.type].toLowerCase()}.
+          </div>
+        </div>
+        <button onClick={onClose} style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Announcement detail modal ────────────────────────────────────────────────
+
+function AnnouncementModal({ a, onClose }: { a: CourseAnnouncement; onClose: () => void }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,37,79,0.18)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.12)', width: '100%', maxWidth: 480, padding: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1B3FA0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+              {a.initials}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: '#7B8DA5' }}>{a.author}</div>
+              <div style={{ fontSize: 12, color: '#B4C0D0' }}>{a.date}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E6ECF3', background: '#F9FBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7B8DA5', flexShrink: 0 }}>
+            <X size={15} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: '#0A254F', marginBottom: 12 }}>{a.title}</div>
+        <div style={{ fontSize: 13, color: '#48607A', lineHeight: '22px', marginBottom: 24 }}>{a.preview}</div>
+        <button onClick={onClose} style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Not found ────────────────────────────────────────────────────────────────
 
 function NotFound({ onBack }: { onBack: () => void }) {
@@ -283,6 +366,8 @@ export default function CourseDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
 
   const course = getCourseBySlug(courseSlug)
+  const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null)
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<CourseAnnouncement | null>(null)
 
   if (!course) {
     return <NotFound onBack={() => navigate('/courses')} />
@@ -343,39 +428,113 @@ export default function CourseDetail() {
         <div className="flex-1 overflow-y-auto min-w-0">
           <div className="px-8 py-6 flex flex-col gap-5">
 
-            {/* Weekly Materials */}
-            <Card>
-              <CardHeader title="Weekly Materials" action="View all weekly materials" />
-              <Divider />
-              <div className="px-6 py-4">
-                {course.weeklyMaterials.map((row, i) => (
-                  <WeekRow key={i} row={row} />
+            {/* Overview tab */}
+            {activeTab === 'Overview' && (
+              <>
+                <Card>
+                  <CardHeader title="Weekly Materials" action="View all weekly materials" />
+                  <Divider />
+                  <div className="px-6 py-4">
+                    {course.weeklyMaterials.map((row, i) => (
+                      <WeekRow key={i} row={row} onOpen={setSelectedMaterial} />
+                    ))}
+                  </div>
+                </Card>
+                <Card>
+                  <CardHeader title="Assignments" action="View all assignments" />
+                  <Divider />
+                  {course.assignments.map((a, i) => (
+                    <AssignmentRow
+                      key={a.slug}
+                      a={a}
+                      last={i === course.assignments.length - 1}
+                      onView={() => navigate(`/courses/${courseSlug}/assignments/${a.slug}`)}
+                    />
+                  ))}
+                </Card>
+                <Card>
+                  <CardHeader title="Latest Announcements" action="View all announcements" />
+                  <Divider />
+                  {course.announcements.map((a, i) => (
+                    <AnnouncementRow key={i} a={a} last={i === course.announcements.length - 1} onOpen={setSelectedAnnouncement} />
+                  ))}
+                </Card>
+              </>
+            )}
+
+            {/* Weekly Materials tab */}
+            {activeTab === 'Weekly Materials' && (
+              <Card>
+                <CardHeader title="Weekly Materials" action="View all weekly materials" />
+                <Divider />
+                <div className="px-6 py-4">
+                  {course.weeklyMaterials.map((row, i) => (
+                    <WeekRow key={i} row={row} onOpen={setSelectedMaterial} />
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Assignments tab */}
+            {activeTab === 'Assignments' && (
+              <Card>
+                <CardHeader title="Assignments" action="View all assignments" />
+                <Divider />
+                {course.assignments.map((a, i) => (
+                  <AssignmentRow
+                    key={a.slug}
+                    a={a}
+                    last={i === course.assignments.length - 1}
+                    onView={() => navigate(`/courses/${courseSlug}/assignments/${a.slug}`)}
+                  />
                 ))}
-              </div>
-            </Card>
+              </Card>
+            )}
 
-            {/* Assignments */}
-            <Card>
-              <CardHeader title="Assignments" action="View all assignments" />
-              <Divider />
-              {course.assignments.map((a, i) => (
-                <AssignmentRow
-                  key={a.slug}
-                  a={a}
-                  last={i === course.assignments.length - 1}
-                  onView={() => navigate(`/courses/${courseSlug}/assignments/${a.slug}`)}
-                />
-              ))}
-            </Card>
+            {/* Announcements tab */}
+            {activeTab === 'Announcements' && (
+              <Card>
+                <CardHeader title="Announcements" action="View all announcements" />
+                <Divider />
+                {course.announcements.map((a, i) => (
+                  <AnnouncementRow key={i} a={a} last={i === course.announcements.length - 1} onOpen={setSelectedAnnouncement} />
+                ))}
+              </Card>
+            )}
 
-            {/* Latest Announcements */}
-            <Card>
-              <CardHeader title="Latest Announcements" action="View all announcements" />
-              <Divider />
-              {course.announcements.map((a, i) => (
-                <AnnouncementRow key={i} a={a} last={i === course.announcements.length - 1} />
-              ))}
-            </Card>
+            {/* Reading List tab */}
+            {activeTab === 'Reading List' && (
+              <Card>
+                <CardHeader title="Reading List" />
+                <Divider />
+                <div className="px-6 py-8 text-center">
+                  <BookOpen size={36} strokeWidth={1.25} className="text-[#D7E0EA] mx-auto mb-3" />
+                  <div className="text-[14px] font-semibold text-[#0A254F] mb-1">Reading list</div>
+                  <div className="text-[13px] text-[#7B8DA5]">Course reading materials will appear here in the live system.</div>
+                </div>
+              </Card>
+            )}
+
+            {/* Feedback tab */}
+            {activeTab === 'Feedback' && (
+              <Card>
+                <CardHeader title="Feedback" />
+                <Divider />
+                <div className="px-6 py-8 text-center">
+                  <Megaphone size={36} strokeWidth={1.25} className="text-[#D7E0EA] mx-auto mb-3" />
+                  <div className="text-[14px] font-semibold text-[#0A254F] mb-1">Feedback</div>
+                  <div className="text-[13px] text-[#7B8DA5]">Assignment feedback and grades will appear here once released.</div>
+                  <button
+                    onClick={() => navigate('/marks')}
+                    className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#2563EB] border border-[#D7E0EA] rounded-[10px] px-4 py-2 hover:bg-[#EAF2FF] transition-colors"
+                  >
+                    View all marks
+                    <ChevronRight size={13} strokeWidth={2} />
+                  </button>
+                </div>
+              </Card>
+            )}
+
           </div>
         </div>
 
@@ -467,6 +626,13 @@ export default function CourseDetail() {
           </Card>
         </aside>
       </div>
+
+      {selectedMaterial && (
+        <MaterialPreviewModal mat={selectedMaterial} onClose={() => setSelectedMaterial(null)} />
+      )}
+      {selectedAnnouncement && (
+        <AnnouncementModal a={selectedAnnouncement} onClose={() => setSelectedAnnouncement(null)} />
+      )}
     </div>
   )
 }

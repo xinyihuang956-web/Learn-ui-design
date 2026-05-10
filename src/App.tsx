@@ -7,6 +7,8 @@ import Schedule from './pages/Schedule'
 import AssignmentSubmission from './pages/AssignmentSubmission'
 import AllDeadlines from './pages/AllDeadlines'
 import CourseUpdates from './pages/CourseUpdates'
+import Marks from './pages/Marks'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -21,8 +23,11 @@ export default function App() {
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/deadlines" element={<AllDeadlines />} />
           <Route path="/updates" element={<CourseUpdates />} />
+          <Route path="/marks" element={<Marks />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </AppShell>
     </BrowserRouter>
   )
 }
+

@@ -90,6 +90,7 @@ export default function Sidebar() {
       <div className="mt-auto px-5 pb-8">
         <div className="border-t border-[#EEF2F7] mb-4" />
         <button
+          onClick={() => alert('Sign out is not available in this prototype.')}
           className="flex items-center gap-3 w-full px-4 rounded-[12px] text-[#7B8DA5] hover:bg-[#FFF5F5] hover:text-[#EF4444] text-[15px] font-medium transition-all duration-150"
           style={{ height: 46 }}
         >

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, ChevronDown, Plus, X,
+  ChevronLeft, ChevronRight, ChevronDown, Plus, X, Check,
   BookOpen, AlertCircle, User, Users, ClipboardList, MessageSquare,
+  MapPin, Clock,
 } from 'lucide-react'
 import MiniCalendarShared from '../components/MiniCalendar'
 import DailyAgendaShared from '../components/DailyAgenda'
@@ -10,6 +11,7 @@ import type { DailyAgendaItem as SharedAgendaItem } from '../components/DailyAge
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type ViewMode = 'Day' | 'Week' | 'Month'
 type EventType = 'Class' | 'Deadline' | 'Personal' | 'Meeting' | 'Task' | 'Seminar' | 'Workshop'
 
 interface TEvent {
@@ -79,13 +81,13 @@ const TYPE_OPTIONS: { label: string; value: EventType }[] = [
   { label: 'Task',               value: 'Task'     },
 ]
 
-const LEGEND = [
-  { label: 'All',                  color: '#94A3B8' },
-  { label: 'Classes',              color: '#2563EB' },
-  { label: 'Deadlines',            color: '#EF4444' },
-  { label: 'Personal',             color: '#1F9D55' },
-  { label: 'Meetings',             color: '#F97316' },
-  { label: 'Seminars / Workshops', color: '#7C3AED' },
+const LEGEND: { label: string; color: string; types: EventType[] }[] = [
+  { label: 'All',                  color: '#94A3B8', types: [] },
+  { label: 'Classes',              color: '#2563EB', types: ['Class'] },
+  { label: 'Deadlines',            color: '#EF4444', types: ['Deadline'] },
+  { label: 'Personal',             color: '#1F9D55', types: ['Personal', 'Task'] },
+  { label: 'Meetings',             color: '#F97316', types: ['Meeting'] },
+  { label: 'Seminars / Workshops', color: '#7C3AED', types: ['Seminar', 'Workshop'] },
 ]
 
 const INITIAL_EVENTS: TEvent[] = [
@@ -129,6 +131,10 @@ function fmtHour(h: number) {
   return h > 12 ? `${h - 12} PM` : `${h} AM`
 }
 
+function fmtHM(h: number, m: number) {
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 function topPx(h: number, m: number) {
   return ((h - START_HOUR) + m / 60) * HOUR_HEIGHT
 }
@@ -142,11 +148,10 @@ function parseHM(t: string): { h: number; m: number } {
   return { h: h || 0, m: m || 0 }
 }
 
-// May 13–19 2024: date 13→day0, 14→day1, …, 19→day6
 function dateToDay(dateStr: string): number {
   if (!dateStr) return -1
   const d = new Date(dateStr + 'T00:00:00')
-  if (d.getMonth() !== 4) return -1 // not May
+  if (d.getMonth() !== 4) return -1
   const n = d.getDate()
   return n >= 13 && n <= 19 ? n - 13 : -1
 }
@@ -172,25 +177,85 @@ function EIcon({ type, size = 14 }: { type: EventType; size?: number }) {
   return <BookOpen {...p} />
 }
 
+// ─── EventDetailModal ─────────────────────────────────────────────────────────
+
+function EventDetailModal({ ev, onClose }: { ev: TEvent; onClose: () => void }) {
+  const s = TYPE_STYLES[ev.type]
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,37,79,0.18)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.12)', width: '100%', maxWidth: 360, padding: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: s.text }}><EIcon type={ev.type} size={18} /></span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: s.text, background: s.bg, borderRadius: 999, padding: '3px 10px', border: `1px solid ${s.border}` }}>
+              {ev.type}
+            </span>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E6ECF3', background: '#F9FBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7B8DA5' }}>
+            <X size={15} strokeWidth={1.75} />
+          </button>
+        </div>
+
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#0A254F', marginBottom: 16 }}>{ev.title}</div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Clock size={14} strokeWidth={1.75} color="#7B8DA5" />
+            <span style={{ fontSize: 13, color: '#48607A' }}>{fmtHM(ev.startH, ev.startM)} – {fmtHM(ev.endH, ev.endM)}</span>
+          </div>
+          {ev.location && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <MapPin size={14} strokeWidth={1.75} color="#7B8DA5" />
+              <span style={{ fontSize: 13, color: '#48607A' }}>{ev.location}</span>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── EventCard ────────────────────────────────────────────────────────────────
 
-function EventCard({ ev, onNavigate }: { ev: TEvent; onNavigate?: (r: string) => void }) {
+function EventCard({ ev, onNavigate, onOpen }: { ev: TEvent; onNavigate?: (r: string) => void; onOpen?: (ev: TEvent) => void }) {
   const s = TYPE_STYLES[ev.type]
   const t = topPx(ev.startH, ev.startM)
   const h = heightPx(ev.startH, ev.startM, ev.endH, ev.endM)
   const compact = h < 52
-  const clickable = !!ev.route
+
+  function handleClick() {
+    if (ev.route && onNavigate) onNavigate(ev.route)
+    else if (onOpen) onOpen(ev)
+  }
 
   return (
     <div
-      onClick={clickable && onNavigate ? () => onNavigate(ev.route!) : undefined}
+      onClick={handleClick}
       style={{
         position: 'absolute', top: t, height: h, left: 3, right: 3,
         background: s.bg, border: `1px solid ${s.border}`, borderRadius: 10,
         padding: compact ? '4px 8px' : '8px 10px',
         overflow: 'hidden', zIndex: 1,
-        cursor: clickable ? 'pointer' : 'default',
+        cursor: 'pointer',
+        transition: 'opacity 0.1s',
       }}
+      onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5 }}>
         <span style={{ color: s.text, flexShrink: 0, marginTop: 1 }}>
@@ -213,12 +278,11 @@ function EventCard({ ev, onNavigate }: { ev: TEvent; onNavigate?: (r: string) =>
 
 // ─── Timetable ────────────────────────────────────────────────────────────────
 
-function Timetable({ events, onNavigate }: { events: TEvent[]; onNavigate?: (r: string) => void }) {
+function Timetable({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigate?: (r: string) => void; onOpen?: (ev: TEvent) => void }) {
   const totalH = HOURS.length * HOUR_HEIGHT
 
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
-      {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, minmax(0,1fr))', borderBottom: '1px solid #E6ECF3' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', padding: '10px 8px 12px 0', fontSize: 10, color: '#7B8DA5', fontWeight: 600, letterSpacing: '0.04em' }}>
           GMT+1
@@ -239,7 +303,6 @@ function Timetable({ events, onNavigate }: { events: TEvent[]; onNavigate?: (r: 
         })}
       </div>
 
-      {/* Body */}
       <div style={{ display: 'flex' }}>
         <div style={{ width: 56, flexShrink: 0 }}>
           {HOURS.map(h => (
@@ -259,7 +322,7 @@ function Timetable({ events, onNavigate }: { events: TEvent[]; onNavigate?: (r: 
             {DAYS.map((d, di) => (
               <div key={d.name} style={{ position: 'relative', borderRight: di < 6 ? '1px solid #E6ECF3' : 'none' }}>
                 {events.filter(e => e.day === di).map(ev => (
-                  <EventCard key={ev.id} ev={ev} onNavigate={onNavigate} />
+                  <EventCard key={ev.id} ev={ev} onNavigate={onNavigate} onOpen={onOpen} />
                 ))}
               </div>
             ))}
@@ -270,9 +333,52 @@ function Timetable({ events, onNavigate }: { events: TEvent[]; onNavigate?: (r: 
   )
 }
 
-// ─── Schedule mini-calendar data ─────────────────────────────────────────────
+// ─── DayView ──────────────────────────────────────────────────────────────────
 
-function buildScheduleWeeks(startOffset: number, daysInMonth: number): (number | null)[][] {
+function DayView({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigate: (r: string) => void; onOpen: (ev: TEvent) => void }) {
+  const dayEvents = events.filter(e => e.day === 2).sort((a, b) => a.startH * 60 + a.startM - (b.startH * 60 + b.startM))
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '24px' }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: '#0A254F', marginBottom: 20 }}>Wednesday, 15 May</div>
+
+      {dayEvents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 0', color: '#B4C0D0', fontSize: 14 }}>No events for this day.</div>
+      ) : (
+        dayEvents.map((ev, i) => {
+          const s = TYPE_STYLES[ev.type]
+          return (
+            <div
+              key={ev.id}
+              onClick={() => ev.route ? onNavigate(ev.route) : onOpen(ev)}
+              style={{ display: 'flex', gap: 16, padding: '14px 12px', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s', borderBottom: i < dayEvents.length - 1 ? '1px solid #EEF2F7' : 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#F9FBFF')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ width: 90, flexShrink: 0, fontSize: 12, color: '#7B8DA5', fontWeight: 500, paddingTop: 2 }}>
+                {fmtHM(ev.startH, ev.startM)} – {fmtHM(ev.endH, ev.endM)}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: s.text }}><EIcon type={ev.type} size={12} /></span>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: s.text, background: s.bg, borderRadius: 999, padding: '2px 8px', border: `1px solid ${s.border}` }}>{ev.type}</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0A254F' }}>{ev.title}</div>
+                {ev.location && <div style={{ fontSize: 12, color: '#7B8DA5', marginTop: 3 }}>{ev.location}</div>}
+              </div>
+            </div>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
+// ─── MonthView ────────────────────────────────────────────────────────────────
+
+function buildWeeks(startOffset: number, daysInMonth: number): (number | null)[][] {
   const flat: (number | null)[] = []
   for (let i = 0; i < startOffset; i++) flat.push(null)
   for (let d = 1; d <= daysInMonth; d++) flat.push(d)
@@ -282,7 +388,64 @@ function buildScheduleWeeks(startOffset: number, daysInMonth: number): (number |
   return weeks
 }
 
-const SCHEDULE_CAL_WEEKS = buildScheduleWeeks(2, 31) // May 2024: starts Wed (offset 2)
+const MONTH_WEEKS = buildWeeks(2, 31) // May 2024 starts Wednesday (offset 2)
+
+function MonthView({ events }: { events: TEvent[] }) {
+  const eventsByDay: Record<number, TEvent[]> = {}
+  events.forEach(ev => {
+    if (ev.day < 0) return
+    if (!eventsByDay[ev.day]) eventsByDay[ev.day] = []
+    eventsByDay[ev.day].push(ev)
+  })
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #E6ECF3' }}>
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+          <div key={d} style={{ padding: '12px 0', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#7B8DA5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {MONTH_WEEKS.map((week, wi) => (
+        <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: wi < MONTH_WEEKS.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
+          {week.map((date, di) => {
+            const dayIdx = date ? date - 13 : -1
+            const dayEvs = dayIdx >= 0 && dayIdx <= 6 ? eventsByDay[dayIdx] || [] : []
+            const isToday = date === 15
+            return (
+              <div key={di} style={{ padding: 8, minHeight: 80, borderRight: di < 6 ? '1px solid #EEF2F7' : 'none', background: date ? '#fff' : '#FAFBFC' }}>
+                {date && (
+                  <>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: '50%', background: isToday ? '#1B3FA0' : 'transparent', color: isToday ? '#fff' : '#0A254F', fontSize: 13, fontWeight: isToday ? 700 : 400, marginBottom: 4 }}>
+                      {date}
+                    </div>
+                    {dayEvs.slice(0, 2).map(ev => {
+                      const s = TYPE_STYLES[ev.type]
+                      return (
+                        <div key={ev.id} style={{ fontSize: 10, fontWeight: 600, color: s.text, background: s.bg, borderRadius: 4, padding: '2px 5px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ev.title}
+                        </div>
+                      )
+                    })}
+                    {dayEvs.length > 2 && (
+                      <div style={{ fontSize: 10, color: '#7B8DA5' }}>+{dayEvs.length - 2} more</div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Schedule mini-calendar data ─────────────────────────────────────────────
+
+const SCHEDULE_CAL_WEEKS = buildWeeks(2, 31)
 const SCHEDULE_CAL_DOTS: Record<number, string> = {
   13: '#2563EB', 14: '#F97316', 15: '#2563EB',
   16: '#EF4444', 17: '#1F9D55',
@@ -302,16 +465,24 @@ function toSharedItems(items: AgendaItem[]): SharedAgendaItem[] {
 
 // ─── FilterCard ───────────────────────────────────────────────────────────────
 
-function FilterCard() {
+function FilterCard({ activeFilter, onFilterChange }: { activeFilter: string; onFilterChange: (label: string) => void }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, padding: '20px', boxShadow: '0 8px 24px rgba(15,23,42,0.04)' }}>
       <div style={{ fontSize: 15, fontWeight: 700, color: '#0A254F', marginBottom: 14 }}>Filter / Legend</div>
-      {LEGEND.map((l, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: '#48607A', fontWeight: 500 }}>{l.label}</span>
-        </div>
-      ))}
+      {LEGEND.map((l, i) => {
+        const active = activeFilter === l.label
+        return (
+          <div
+            key={i}
+            onClick={() => onFilterChange(l.label)}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 8, cursor: 'pointer', background: active ? '#F0F4FF' : 'transparent', transition: 'background 0.12s' }}
+          >
+            <div style={{ width: 14, height: 14, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 13, color: active ? '#1B3FA0' : '#48607A', fontWeight: active ? 700 : 500 }}>{l.label}</span>
+            {active && <Check size={13} strokeWidth={2.5} color="#1B3FA0" />}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -390,7 +561,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
         style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.10)', width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Modal header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid #EEF2F7' }}>
           <span style={{ fontSize: 17, fontWeight: 700, color: '#0A254F' }}>Add schedule item</span>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E6ECF3', background: '#F9FBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7B8DA5', cursor: 'pointer' }}>
@@ -398,10 +568,7 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
           </button>
         </div>
 
-        {/* Form body */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          {/* Title */}
           <div>
             <label style={labelStyle}>Title <span style={{ color: '#EF4444' }}>*</span></label>
             <input
@@ -413,7 +580,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             {errors.title && <div style={errorStyle}>{errors.title}</div>}
           </div>
 
-          {/* Type + Date */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>Type <span style={{ color: '#EF4444' }}>*</span></label>
@@ -439,7 +605,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             </div>
           </div>
 
-          {/* Start + End time */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>Start time <span style={{ color: '#EF4444' }}>*</span></label>
@@ -462,7 +627,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             </div>
           </div>
 
-          {/* Course / source */}
           <div>
             <label style={labelStyle}>Course / source</label>
             <input
@@ -473,7 +637,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             />
           </div>
 
-          {/* Location */}
           <div>
             <label style={labelStyle}>Location / note</label>
             <input
@@ -484,7 +647,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             />
           </div>
 
-          {/* Agenda checkbox */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <div
               onClick={() => setField('addToAgenda', !form.addToAgenda)}
@@ -500,7 +662,6 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
           </label>
         </div>
 
-        {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '16px 24px', borderTop: '1px solid #EEF2F7' }}>
           <button onClick={onClose} style={{ height: 38, padding: '0 18px', borderRadius: 10, border: '1px solid #D7E0EA', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             Cancel
@@ -529,14 +690,21 @@ export default function Schedule() {
   const [events, setEvents] = useState<TEvent[]>(INITIAL_EVENTS)
   const [agenda, setAgenda] = useState<AgendaItem[]>(INITIAL_AGENDA)
   const [modalOpen, setModalOpen] = useState(false)
+  const [view, setView] = useState<ViewMode>('Week')
+  const [activeFilter, setActiveFilter] = useState<string>('All')
+  const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null)
+
+  const visibleEvents = activeFilter === 'All'
+    ? events
+    : events.filter(ev => {
+        const entry = LEGEND.find(l => l.label === activeFilter)
+        return entry ? entry.types.includes(ev.type) : true
+      })
 
   function handleAdd(ev: TEvent, dateStr: string, startTime: string, endTime: string, addToAgenda: boolean) {
-    // Add to timetable if in the current week
     if (ev.day >= 0) {
       setEvents(prev => [...prev, ev])
     }
-
-    // Add to 15 May agenda if date matches or checkbox is checked
     if (isSelectedDay(dateStr) && addToAgenda) {
       const timeStr = endTime ? `${startTime}–${endTime}` : startTime
       const item: AgendaItem = {
@@ -546,19 +714,16 @@ export default function Schedule() {
         location: ev.location,
         type: ev.type,
       }
-      setAgenda(prev =>
-        [...prev, item].sort((a, b) => a.time.localeCompare(b.time))
-      )
+      setAgenda(prev => [...prev, item].sort((a, b) => a.time.localeCompare(b.time)))
     }
   }
 
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
-      {/* ── Center: title + controls + timetable, only this scrolls ── */}
+      {/* Center: scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         <div style={{ padding: '32px 32px 48px' }}>
-          {/* Title */}
           <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 18 }}>
             Schedule
           </h1>
@@ -578,7 +743,7 @@ export default function Schedule() {
             </div>
 
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              May 13 – 19, 2024
+              {view === 'Day' ? '15 May, 2024' : view === 'Month' ? 'May 2024' : 'May 13 – 19, 2024'}
               <ChevronDown size={13} strokeWidth={1.75} color="#7B8DA5" />
             </button>
 
@@ -592,8 +757,12 @@ export default function Schedule() {
               </button>
 
               <div style={{ display: 'flex', border: '1px solid #E6ECF3', borderRadius: 10, overflow: 'hidden' }}>
-                {(['Day', 'Week', 'Month'] as const).map((v, i) => (
-                  <button key={v} style={{ padding: '0 14px', height: 36, background: v === 'Week' ? '#1B3FA0' : '#fff', color: v === 'Week' ? '#fff' : '#48607A', border: 'none', borderLeft: i > 0 ? '1px solid #E6ECF3' : 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {(['Day', 'Week', 'Month'] as ViewMode[]).map((v, i) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    style={{ padding: '0 14px', height: 36, background: v === view ? '#1B3FA0' : '#fff', color: v === view ? '#fff' : '#48607A', border: 'none', borderLeft: i > 0 ? '1px solid #E6ECF3' : 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s, color 0.15s' }}
+                  >
                     {v}
                   </button>
                 ))}
@@ -601,11 +770,19 @@ export default function Schedule() {
             </div>
           </div>
 
-          <Timetable events={events} onNavigate={(r) => navigate(r)} />
+          {view === 'Week' && (
+            <Timetable events={visibleEvents} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
+          )}
+          {view === 'Day' && (
+            <DayView events={visibleEvents} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
+          )}
+          {view === 'Month' && (
+            <MonthView events={visibleEvents} />
+          )}
         </div>
       </div>
 
-      {/* ── Right sidebar: fixed, never scrolls ── */}
+      {/* Right sidebar */}
       <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <MiniCalendarShared
           monthLabel="May 2024"
@@ -627,15 +804,18 @@ export default function Schedule() {
             </button>
           }
         />
-        <FilterCard />
+        <FilterCard activeFilter={activeFilter} onFilterChange={setActiveFilter} />
       </div>
 
-      {/* Modal */}
       {modalOpen && (
         <AddItemModal
           onClose={() => setModalOpen(false)}
           onAdd={handleAdd}
         />
+      )}
+
+      {selectedEvent && (
+        <EventDetailModal ev={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
     </div>
   )
