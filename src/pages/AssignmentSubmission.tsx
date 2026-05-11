@@ -651,7 +651,7 @@ export default function AssignmentSubmission() {
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* Center: scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
-        <div style={{ padding: '32px 32px 48px' }}>
+        <div style={{ padding: '28px 32px 40px' }}>
           <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 8 }}>
             Assignment Submission
           </h1>

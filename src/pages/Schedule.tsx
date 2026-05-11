@@ -8,6 +8,7 @@ import {
 import MiniCalendarShared from '../components/MiniCalendar'
 import DailyAgendaShared from '../components/DailyAgenda'
 import type { DailyAgendaItem as SharedAgendaItem } from '../components/DailyAgenda'
+import Toast from '../components/Toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ interface AgendaItem {
   title: string
   location: string
   type: EventType
+  route?: string
 }
 
 interface FormState {
@@ -61,6 +63,8 @@ const DAYS = [
   { name: 'Sat', date: 18 },
   { name: 'Sun', date: 19 },
 ]
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const TYPE_STYLES: Record<EventType, { bg: string; border: string; text: string }> = {
   Class:    { bg: '#EAF2FF', border: '#93C5FD', text: '#2563EB' },
@@ -98,7 +102,7 @@ const INITIAL_EVENTS: TEvent[] = [
   { id: 't2',  day: 1, title: 'Personal gym session',       location: 'Pleasance Gym',       type: 'Personal', startH: 17, startM: 30, endH: 18, endM: 30 },
   { id: 'w1',  day: 2, title: 'Molecular Biology Lecture',  location: 'David Hume 2.12',     type: 'Class',    startH: 9,  startM: 0,  endH: 10, endM: 0,  route: '/courses/molecular-biology' },
   { id: 'w2',  day: 2, title: 'Lab Report Deadline',        location: 'LEARN Assignment',    type: 'Deadline', startH: 14, startM: 0,  endH: 14, endM: 30, route: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics' },
-  { id: 'th1', day: 3, title: 'Project workshop',           location: 'George Square G.03',  type: 'Workshop', startH: 10, startM: 0,  endH: 12, endM: 0  },
+  { id: 'th1', day: 3, title: 'Project Workshop',           location: 'George Square G.03',  type: 'Workshop', startH: 10, startM: 0,  endH: 12, endM: 0  },
   { id: 'th2', day: 3, title: 'Sociology Seminar',          location: 'Appleton Tower 1.05', type: 'Seminar',  startH: 15, startM: 0,  endH: 16, endM: 0,  route: '/courses/sociology' },
   { id: 'f1',  day: 4, title: 'Library return',             location: 'Main Library',        type: 'Personal', startH: 11, startM: 0,  endH: 11, endM: 30 },
   { id: 'f2',  day: 4, title: 'Molecular Biology Tutorial', location: 'David Hume 1.11',     type: 'Class',    startH: 14, startM: 0,  endH: 15, endM: 0,  route: '/courses/molecular-biology' },
@@ -106,22 +110,52 @@ const INITIAL_EVENTS: TEvent[] = [
   { id: 'su1', day: 6, title: 'Personal gym session',       location: 'Pleasance Gym',       type: 'Personal', startH: 18, startM: 0,  endH: 19, endM: 0  },
 ]
 
-const INITIAL_AGENDA: AgendaItem[] = [
-  { id: 'a1', time: '09:00–10:00', title: 'Molecular Biology Lecture', location: 'David Hume 2.12',     type: 'Class'    },
-  { id: 'a2', time: '14:00',       title: 'Lab Report Deadline',       location: 'LEARN Assignment',    type: 'Deadline' },
-  { id: 'a3', time: '15:00–16:00', title: 'Sociology Seminar',         location: 'Appleton Tower 1.05', type: 'Seminar'  },
-  { id: 'a4', time: '17:30–18:30', title: 'Personal gym session',      location: 'Pleasance Gym',       type: 'Personal' },
-]
+const AGENDA_BY_DAY: Record<number, AgendaItem[]> = {
+  13: [
+    { id: 'ag-m1', time: '09:00–10:00', title: 'Molecular Biology Lecture', location: 'David Hume 2.12',    type: 'Class',   route: '/courses/molecular-biology' },
+    { id: 'ag-m2', time: '11:00–12:00', title: 'Sociology Seminar',         location: 'Appleton Tower 1.05', type: 'Seminar', route: '/courses/sociology' },
+    { id: 'ag-m3', time: '15:00–16:00', title: 'Review seminar notes',      location: '',                    type: 'Task' },
+  ],
+  14: [
+    { id: 'ag-t1', time: '13:00–14:30', title: 'Marketing Group Meeting', location: 'Online',         type: 'Meeting'  },
+    { id: 'ag-t2', time: '17:30–18:30', title: 'Personal gym session',    location: 'Pleasance Gym',  type: 'Personal' },
+  ],
+  15: [
+    { id: 'ag-w1', time: '09:00–10:00', title: 'Molecular Biology Lecture', location: 'David Hume 2.12',    type: 'Class',    route: '/courses/molecular-biology' },
+    { id: 'ag-w2', time: '14:00',       title: 'Lab Report Deadline',       location: 'LEARN Assignment',    type: 'Deadline', route: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics' },
+    { id: 'ag-w3', time: '15:00–16:00', title: 'Sociology Seminar',         location: 'Appleton Tower 1.05', type: 'Seminar',  route: '/courses/sociology' },
+    { id: 'ag-w4', time: '17:30–18:30', title: 'Personal gym session',      location: 'Pleasance Gym',       type: 'Personal' },
+  ],
+  16: [
+    { id: 'ag-th1', time: '10:00–12:00', title: 'Project Workshop',    location: 'George Square G.03',  type: 'Workshop' },
+    { id: 'ag-th2', time: '15:00–16:00', title: 'Sociology Seminar',   location: 'Appleton Tower 1.05', type: 'Seminar', route: '/courses/sociology' },
+  ],
+  17: [
+    { id: 'ag-f1', time: '11:00–11:30', title: 'Library return',             location: 'Main Library',    type: 'Personal' },
+    { id: 'ag-f2', time: '14:00–15:00', title: 'Molecular Biology Tutorial', location: 'David Hume 1.11', type: 'Class',   route: '/courses/molecular-biology' },
+    { id: 'ag-f3', time: '16:30–17:30', title: 'Marketing Group Meeting',    location: 'Online',          type: 'Meeting'  },
+  ],
+  19: [
+    { id: 'ag-su1', time: '18:00–19:00', title: 'Personal gym session', location: 'Pleasance Gym', type: 'Personal' },
+  ],
+}
 
-const EMPTY_FORM: FormState = {
-  title: '',
-  type: 'Class',
-  date: '2024-05-15',
-  startTime: '10:00',
-  endTime: '11:00',
-  source: '',
-  location: '',
-  addToAgenda: true,
+// ─── Schedule mini-calendar data ─────────────────────────────────────────────
+
+function buildWeeks(startOffset: number, daysInMonth: number): (number | null)[][] {
+  const flat: (number | null)[] = []
+  for (let i = 0; i < startOffset; i++) flat.push(null)
+  for (let d = 1; d <= daysInMonth; d++) flat.push(d)
+  while (flat.length % 7 !== 0) flat.push(null)
+  const weeks: (number | null)[][] = []
+  for (let i = 0; i < flat.length; i += 7) weeks.push(flat.slice(i, i + 7))
+  return weeks
+}
+
+const SCHEDULE_CAL_WEEKS = buildWeeks(2, 31)
+const SCHEDULE_CAL_DOTS: Record<number, string> = {
+  13: '#2563EB', 14: '#F97316', 15: '#2563EB',
+  16: '#EF4444', 17: '#1F9D55',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -156,12 +190,19 @@ function dateToDay(dateStr: string): number {
   return n >= 13 && n <= 19 ? n - 13 : -1
 }
 
-function isSelectedDay(dateStr: string): boolean {
-  return dateStr === '2024-05-15'
-}
-
 function genId() {
   return `ev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+}
+
+function toSharedItems(items: AgendaItem[]): SharedAgendaItem[] {
+  return items.map(item => ({
+    id: item.id,
+    time: item.time,
+    title: item.title,
+    subtitle: item.location,
+    category: item.type as SharedAgendaItem['category'],
+    route: item.route,
+  }))
 }
 
 // ─── EIcon ────────────────────────────────────────────────────────────────────
@@ -203,9 +244,7 @@ function EventDetailModal({ ev, onClose }: { ev: TEvent; onClose: () => void }) 
             <X size={15} strokeWidth={1.75} />
           </button>
         </div>
-
         <div style={{ fontSize: 18, fontWeight: 700, color: '#0A254F', marginBottom: 16 }}>{ev.title}</div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Clock size={14} strokeWidth={1.75} color="#7B8DA5" />
@@ -218,11 +257,54 @@ function EventDetailModal({ ev, onClose }: { ev: TEvent; onClose: () => void }) 
             </div>
           )}
         </div>
+        <button onClick={onClose} style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
 
-        <button
-          onClick={onClose}
-          style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
-        >
+// ─── AgendaItemDetailModal ────────────────────────────────────────────────────
+
+function AgendaItemDetailModal({ item, onClose }: { item: AgendaItem; onClose: () => void }) {
+  const s = TYPE_STYLES[item.type]
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,37,79,0.18)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, border: '1px solid #E6ECF3', boxShadow: '0 24px 64px rgba(15,23,42,0.12)', width: '100%', maxWidth: 360, padding: 28 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: s.text }}><EIcon type={item.type} size={18} /></span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: s.text, background: s.bg, borderRadius: 999, padding: '3px 10px', border: `1px solid ${s.border}` }}>
+              {item.type}
+            </span>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E6ECF3', background: '#F9FBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7B8DA5' }}>
+            <X size={15} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#0A254F', marginBottom: 16 }}>{item.title}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Clock size={14} strokeWidth={1.75} color="#7B8DA5" />
+            <span style={{ fontSize: 13, color: '#48607A' }}>{item.time}</span>
+          </div>
+          {item.location && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <MapPin size={14} strokeWidth={1.75} color="#7B8DA5" />
+              <span style={{ fontSize: 13, color: '#48607A' }}>{item.location}</span>
+            </div>
+          )}
+        </div>
+        <button onClick={onClose} style={{ width: '100%', height: 40, borderRadius: 10, background: '#1B3FA0', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
           Close
         </button>
       </div>
@@ -278,7 +360,7 @@ function EventCard({ ev, onNavigate, onOpen }: { ev: TEvent; onNavigate?: (r: st
 
 // ─── Timetable ────────────────────────────────────────────────────────────────
 
-function Timetable({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigate?: (r: string) => void; onOpen?: (ev: TEvent) => void }) {
+function Timetable({ events, selectedCalDate, onNavigate, onOpen }: { events: TEvent[]; selectedCalDate: number; onNavigate?: (r: string) => void; onOpen?: (ev: TEvent) => void }) {
   const totalH = HOURS.length * HOUR_HEIGHT
 
   return (
@@ -287,8 +369,8 @@ function Timetable({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigat
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', padding: '10px 8px 12px 0', fontSize: 10, color: '#7B8DA5', fontWeight: 600, letterSpacing: '0.04em' }}>
           GMT+1
         </div>
-        {DAYS.map((d, i) => {
-          const sel = i === 2
+        {DAYS.map((d) => {
+          const sel = d.date === selectedCalDate
           return (
             <div key={d.name} style={{ padding: '10px 4px 12px', textAlign: 'center', borderLeft: '1px solid #E6ECF3' }}>
               <div style={{ fontSize: 10, color: '#7B8DA5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
@@ -335,12 +417,14 @@ function Timetable({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigat
 
 // ─── DayView ──────────────────────────────────────────────────────────────────
 
-function DayView({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigate: (r: string) => void; onOpen: (ev: TEvent) => void }) {
-  const dayEvents = events.filter(e => e.day === 2).sort((a, b) => a.startH * 60 + a.startM - (b.startH * 60 + b.startM))
+function DayView({ events, selectedCalDate, onNavigate, onOpen }: { events: TEvent[]; selectedCalDate: number; onNavigate: (r: string) => void; onOpen: (ev: TEvent) => void }) {
+  const dayIdx = selectedCalDate >= 13 && selectedCalDate <= 19 ? selectedCalDate - 13 : 2
+  const dayName = DAY_NAMES[dayIdx]
+  const dayEvents = events.filter(e => e.day === dayIdx).sort((a, b) => a.startH * 60 + a.startM - (b.startH * 60 + b.startM))
 
   return (
     <div style={{ background: '#fff', border: '1px solid #E6ECF3', borderRadius: 16, boxShadow: '0 8px 24px rgba(15,23,42,0.04)', padding: '24px' }}>
-      <div style={{ fontSize: 17, fontWeight: 700, color: '#0A254F', marginBottom: 20 }}>Wednesday, 15 May</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: '#0A254F', marginBottom: 20 }}>{dayName}, {selectedCalDate} May</div>
 
       {dayEvents.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: '#B4C0D0', fontSize: 14 }}>No events for this day.</div>
@@ -378,19 +462,9 @@ function DayView({ events, onNavigate, onOpen }: { events: TEvent[]; onNavigate:
 
 // ─── MonthView ────────────────────────────────────────────────────────────────
 
-function buildWeeks(startOffset: number, daysInMonth: number): (number | null)[][] {
-  const flat: (number | null)[] = []
-  for (let i = 0; i < startOffset; i++) flat.push(null)
-  for (let d = 1; d <= daysInMonth; d++) flat.push(d)
-  while (flat.length % 7 !== 0) flat.push(null)
-  const weeks: (number | null)[][] = []
-  for (let i = 0; i < flat.length; i += 7) weeks.push(flat.slice(i, i + 7))
-  return weeks
-}
-
 const MONTH_WEEKS = buildWeeks(2, 31) // May 2024 starts Wednesday (offset 2)
 
-function MonthView({ events }: { events: TEvent[] }) {
+function MonthView({ events, selectedCalDate }: { events: TEvent[]; selectedCalDate: number }) {
   const eventsByDay: Record<number, TEvent[]> = {}
   events.forEach(ev => {
     if (ev.day < 0) return
@@ -413,12 +487,12 @@ function MonthView({ events }: { events: TEvent[] }) {
           {week.map((date, di) => {
             const dayIdx = date ? date - 13 : -1
             const dayEvs = dayIdx >= 0 && dayIdx <= 6 ? eventsByDay[dayIdx] || [] : []
-            const isToday = date === 15
+            const isSel = date === selectedCalDate
             return (
               <div key={di} style={{ padding: 8, minHeight: 80, borderRight: di < 6 ? '1px solid #EEF2F7' : 'none', background: date ? '#fff' : '#FAFBFC' }}>
                 {date && (
                   <>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: '50%', background: isToday ? '#1B3FA0' : 'transparent', color: isToday ? '#fff' : '#0A254F', fontSize: 13, fontWeight: isToday ? 700 : 400, marginBottom: 4 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: '50%', background: isSel ? '#1B3FA0' : 'transparent', color: isSel ? '#fff' : '#0A254F', fontSize: 13, fontWeight: isSel ? 700 : 400, marginBottom: 4 }}>
                       {date}
                     </div>
                     {dayEvs.slice(0, 2).map(ev => {
@@ -441,26 +515,6 @@ function MonthView({ events }: { events: TEvent[] }) {
       ))}
     </div>
   )
-}
-
-// ─── Schedule mini-calendar data ─────────────────────────────────────────────
-
-const SCHEDULE_CAL_WEEKS = buildWeeks(2, 31)
-const SCHEDULE_CAL_DOTS: Record<number, string> = {
-  13: '#2563EB', 14: '#F97316', 15: '#2563EB',
-  16: '#EF4444', 17: '#1F9D55',
-}
-
-// ─── Map AgendaItem → SharedAgendaItem ───────────────────────────────────────
-
-function toSharedItems(items: AgendaItem[]): SharedAgendaItem[] {
-  return items.map(item => ({
-    id: item.id,
-    time: item.time,
-    title: item.title,
-    subtitle: item.location,
-    category: item.type as SharedAgendaItem['category'],
-  }))
 }
 
 // ─── FilterCard ───────────────────────────────────────────────────────────────
@@ -508,12 +562,18 @@ const errorStyle: React.CSSProperties = {
 type Errors = Partial<Record<keyof FormState, string>>
 
 interface ModalProps {
+  defaultDate: number
   onClose: () => void
   onAdd: (ev: TEvent, dateStr: string, startTime: string, endTime: string, addToAgenda: boolean) => void
 }
 
-function AddItemModal({ onClose, onAdd }: ModalProps) {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+function AddItemModal({ defaultDate, onClose, onAdd }: ModalProps) {
+  const dateStr = `2024-05-${String(defaultDate).padStart(2, '0')}`
+  const [form, setForm] = useState<FormState>({
+    title: '', type: 'Class', date: dateStr,
+    startTime: '10:00', endTime: '11:00',
+    source: '', location: '', addToAgenda: true,
+  })
   const [errors, setErrors] = useState<Errors>({})
 
   function setField<K extends keyof FormState>(key: K, val: FormState[K]) {
@@ -526,26 +586,16 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
     if (!form.title.trim()) errs.title = 'Title is required'
     if (!form.date) errs.date = 'Date is required'
     if (!form.startTime) errs.startTime = 'Start time is required'
-
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
     const start = parseHM(form.startTime)
     const end = form.endTime ? parseHM(form.endTime) : { h: start.h + 1, m: start.m }
     const day = dateToDay(form.date)
 
     const newEvent: TEvent = {
-      id: genId(),
-      day,
-      title: form.title.trim(),
-      location: form.location.trim(),
-      type: form.type,
-      startH: start.h,
-      startM: start.m,
-      endH: end.h,
-      endM: end.m,
+      id: genId(), day, title: form.title.trim(),
+      location: form.location.trim(), type: form.type,
+      startH: start.h, startM: start.m, endH: end.h, endM: end.m,
     }
 
     onAdd(newEvent, form.date, form.startTime, form.endTime, form.addToAgenda)
@@ -618,33 +668,18 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
             </div>
             <div>
               <label style={labelStyle}>End time <span style={{ color: '#7B8DA5' }}>(optional)</span></label>
-              <input
-                type="time"
-                style={inputStyle}
-                value={form.endTime}
-                onChange={e => setField('endTime', e.target.value)}
-              />
+              <input type="time" style={inputStyle} value={form.endTime} onChange={e => setField('endTime', e.target.value)} />
             </div>
           </div>
 
           <div>
             <label style={labelStyle}>Course / source</label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. BIOL08019 or Personal"
-              value={form.source}
-              onChange={e => setField('source', e.target.value)}
-            />
+            <input style={inputStyle} placeholder="e.g. BIOL08019 or Personal" value={form.source} onChange={e => setField('source', e.target.value)} />
           </div>
 
           <div>
             <label style={labelStyle}>Location / note</label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. Main Library"
-              value={form.location}
-              onChange={e => setField('location', e.target.value)}
-            />
+            <input style={inputStyle} placeholder="e.g. Main Library" value={form.location} onChange={e => setField('location', e.target.value)} />
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -658,7 +693,7 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
                 </svg>
               )}
             </div>
-            <span style={{ fontSize: 13, color: '#48607A', fontWeight: 500 }}>Show in daily agenda (15 May)</span>
+            <span style={{ fontSize: 13, color: '#48607A', fontWeight: 500 }}>Show in daily agenda ({defaultDate} May)</span>
           </label>
         </div>
 
@@ -675,24 +710,24 @@ function AddItemModal({ onClose, onAdd }: ModalProps) {
   )
 }
 
-// ─── Agenda route lookup ──────────────────────────────────────────────────────
-
-const AGENDA_ROUTES: Record<string, string> = {
-  a1: '/courses/molecular-biology',
-  a2: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics',
-  a3: '/courses/sociology',
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
   const navigate = useNavigate()
   const [events, setEvents] = useState<TEvent[]>(INITIAL_EVENTS)
-  const [agenda, setAgenda] = useState<AgendaItem[]>(INITIAL_AGENDA)
+  const [extraAgendaByDate, setExtraAgendaByDate] = useState<Record<number, AgendaItem[]>>({})
   const [modalOpen, setModalOpen] = useState(false)
   const [view, setView] = useState<ViewMode>('Week')
   const [activeFilter, setActiveFilter] = useState<string>('All')
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null)
+  const [selectedCalDate, setSelectedCalDate] = useState(15)
+  const [selectedAgendaItem, setSelectedAgendaItem] = useState<AgendaItem | null>(null)
+  const [toast, setToast] = useState(false)
+
+  const currentAgenda: AgendaItem[] = [
+    ...(AGENDA_BY_DAY[selectedCalDate] ?? []),
+    ...(extraAgendaByDate[selectedCalDate] ?? []),
+  ]
 
   const visibleEvents = activeFilter === 'All'
     ? events
@@ -705,7 +740,8 @@ export default function Schedule() {
     if (ev.day >= 0) {
       setEvents(prev => [...prev, ev])
     }
-    if (isSelectedDay(dateStr) && addToAgenda) {
+    if (addToAgenda) {
+      const dateNum = new Date(dateStr + 'T00:00:00').getDate()
       const timeStr = endTime ? `${startTime}–${endTime}` : startTime
       const item: AgendaItem = {
         id: ev.id + '-ag',
@@ -714,8 +750,22 @@ export default function Schedule() {
         location: ev.location,
         type: ev.type,
       }
-      setAgenda(prev => [...prev, item].sort((a, b) => a.time.localeCompare(b.time)))
+      setExtraAgendaByDate(prev => ({
+        ...prev,
+        [dateNum]: [...(prev[dateNum] ?? []), item].sort((a, b) => a.time.localeCompare(b.time)),
+      }))
+      setToast(true)
+      setTimeout(() => setToast(false), 2500)
     }
+  }
+
+  function handleAgendaClick(sharedItem: SharedAgendaItem) {
+    if (sharedItem.route) {
+      navigate(sharedItem.route)
+      return
+    }
+    const match = currentAgenda.find(a => a.id === sharedItem.id)
+    if (match) setSelectedAgendaItem(match)
   }
 
   return (
@@ -723,7 +773,7 @@ export default function Schedule() {
 
       {/* Center: scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
-        <div style={{ padding: '32px 32px 48px' }}>
+        <div style={{ padding: '28px 32px 40px' }}>
           <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 18 }}>
             Schedule
           </h1>
@@ -743,7 +793,7 @@ export default function Schedule() {
             </div>
 
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              {view === 'Day' ? '15 May, 2024' : view === 'Month' ? 'May 2024' : 'May 13 – 19, 2024'}
+              {view === 'Day' ? `${selectedCalDate} May, 2024` : view === 'Month' ? 'May 2024' : 'May 13 – 19, 2024'}
               <ChevronDown size={13} strokeWidth={1.75} color="#7B8DA5" />
             </button>
 
@@ -771,13 +821,13 @@ export default function Schedule() {
           </div>
 
           {view === 'Week' && (
-            <Timetable events={visibleEvents} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
+            <Timetable events={visibleEvents} selectedCalDate={selectedCalDate} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
           )}
           {view === 'Day' && (
-            <DayView events={visibleEvents} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
+            <DayView events={visibleEvents} selectedCalDate={selectedCalDate} onNavigate={r => navigate(r)} onOpen={setSelectedEvent} />
           )}
           {view === 'Month' && (
-            <MonthView events={visibleEvents} />
+            <MonthView events={visibleEvents} selectedCalDate={selectedCalDate} />
           )}
         </div>
       </div>
@@ -787,17 +837,15 @@ export default function Schedule() {
         <MiniCalendarShared
           monthLabel="May 2024"
           weeks={SCHEDULE_CAL_WEEKS}
-          selectedDate={15}
+          selectedDate={selectedCalDate}
           eventDots={SCHEDULE_CAL_DOTS}
+          onDateSelect={setSelectedCalDate}
         />
         <DailyAgendaShared
-          dateLabel="15 May Agenda"
-          showTodayBadge
-          items={toSharedItems(agenda)}
-          onItemClick={(item) => {
-            const r = AGENDA_ROUTES[String(item.id)]
-            if (r) navigate(r)
-          }}
+          dateLabel={`${selectedCalDate} May Agenda`}
+          showTodayBadge={selectedCalDate === 15}
+          items={toSharedItems(currentAgenda)}
+          onItemClick={handleAgendaClick}
           bottomAction={
             <button style={{ width: '100%', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0' }}>
               View full day →
@@ -809,6 +857,7 @@ export default function Schedule() {
 
       {modalOpen && (
         <AddItemModal
+          defaultDate={selectedCalDate}
           onClose={() => setModalOpen(false)}
           onAdd={handleAdd}
         />
@@ -817,6 +866,12 @@ export default function Schedule() {
       {selectedEvent && (
         <EventDetailModal ev={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
+
+      {selectedAgendaItem && (
+        <AgendaItemDetailModal item={selectedAgendaItem} onClose={() => setSelectedAgendaItem(null)} />
+      )}
+
+      <Toast message="Item added to agenda" visible={toast} />
     </div>
   )
 }

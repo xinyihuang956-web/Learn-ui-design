@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, ChevronDown, Clock, FileText, Eye, MessageSquare, X, User } from 'lucide-react'
+import { Search, Bell, ChevronDown, Clock, FileText, Eye, MessageSquare, X, User, Settings } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,18 +153,18 @@ export default function TopHeader() {
 
   return (
     <>
-      <header className="bg-white border-b border-[#E6ECF3] flex items-center justify-between px-8" style={{ height: 72, position: 'relative', zIndex: 40 }}>
+      <header className="bg-white border-b border-[#E6ECF3] flex items-center justify-between px-8" style={{ height: 64, position: 'relative', zIndex: 40 }}>
 
         {/* ── Search ── */}
-        <div ref={searchRef} className="relative" style={{ width: 380 }}>
-          <Search size={16} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7B8DA5] pointer-events-none" />
+        <div ref={searchRef} className="relative" style={{ width: 340 }}>
+          <Search size={15} strokeWidth={1.75} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B4C0D0] pointer-events-none" />
           <input
             type="text"
             placeholder="Search LEARN"
             value={query}
             onChange={e => { setQuery(e.target.value); setSearchOpen(true) }}
             onFocus={() => setSearchOpen(true)}
-            className="w-full h-11 pl-10 pr-9 border border-[#E6ECF3] rounded-[12px] bg-white text-sm text-[#48607A] placeholder-[#7B8DA5] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[rgba(37,99,235,0.12)] transition-all"
+            className="w-full h-10 pl-9 pr-8 border border-[#E6ECF3] rounded-[12px] bg-white text-[13px] text-[#48607A] placeholder-[#B4C0D0] outline-none focus:border-[#93C5FD] focus:ring-2 focus:ring-[rgba(37,99,235,0.08)] transition-all hover:border-[#D7E0EA]"
           />
           {query && (
             <button onClick={() => { setQuery(''); setSearchOpen(false) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B4C0D0] hover:text-[#7B8DA5]">
@@ -173,7 +173,7 @@ export default function TopHeader() {
           )}
 
           {searchOpen && (
-            <Dropdown width={380}>
+            <Dropdown width={340}>
               <div style={{ padding: '10px 14px 6px', fontSize: 11, fontWeight: 700, color: '#7B8DA5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {query.trim() ? 'Results' : 'Quick links'}
               </div>
@@ -260,7 +260,7 @@ export default function TopHeader() {
                 </div>
                 {[
                   { label: 'View profile', icon: <User size={14} strokeWidth={1.75} />, action: () => { setMenuOpen(false); setProfileOpen(true) } },
-                  { label: 'Settings',     icon: <Search size={14} strokeWidth={1.75} />, action: () => go('/settings') },
+                  { label: 'Settings',     icon: <Settings size={14} strokeWidth={1.75} />, action: () => go('/settings') },
                 ].map((item, i) => (
                   <button
                     key={i}
@@ -274,7 +274,7 @@ export default function TopHeader() {
                   </button>
                 ))}
                 <button
-                  onClick={() => { setMenuOpen(false); alert('Sign out — prototype action') }}
+                  onClick={() => setMenuOpen(false)}
                   style={{ ...menuBtnStyle, gap: 10, borderTop: '1px solid #EEF2F7', color: '#EF4444' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F5')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}

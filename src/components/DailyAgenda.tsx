@@ -11,6 +11,7 @@ export type DailyAgendaItem = {
   title: string
   subtitle: string
   category: AgendaCategory
+  route?: string
 }
 
 type PillVariant = 'blue' | 'red' | 'green' | 'orange' | 'purple'
@@ -58,27 +59,35 @@ export default function DailyAgenda({
       </div>
       <div style={{ height: 1, background: '#EEF2F7' }} />
 
-      {/* Agenda rows */}
-      <div style={{ padding: '4px 20px 0' }}>
-        {items.map((item, i) => (
+      {/* Agenda rows or empty state */}
+      <div style={{ padding: '4px 12px 0' }}>
+        {items.length === 0 ? (
+          <div style={{ padding: '20px 8px', textAlign: 'center', color: '#B4C0D0', fontSize: 13 }}>
+            No items scheduled for this day
+          </div>
+        ) : items.map((item, i) => (
           <div
             key={item.id}
             onClick={() => onItemClick?.(item)}
+            onMouseEnter={e => { if (onItemClick) e.currentTarget.style.background = '#F0F4FF' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12,
-              padding: '11px 0',
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              padding: '10px 8px',
+              margin: '0',
               borderBottom: i < items.length - 1 ? '1px solid #EEF2F7' : 'none',
               cursor: onItemClick ? 'pointer' : 'default',
               borderRadius: 8,
+              transition: 'background 0.12s',
             }}
           >
             {/* Time column */}
-            <div style={{ width: 60, flexShrink: 0, paddingTop: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#0A254F', lineHeight: '16px' }}>
+            <div style={{ width: 56, flexShrink: 0, paddingTop: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#48607A', lineHeight: '16px' }}>
                 {item.time}
               </div>
               {item.endTime && (
-                <div style={{ fontSize: 11, color: '#B4C0D0', lineHeight: '15px' }}>
+                <div style={{ fontSize: 10, color: '#B4C0D0', lineHeight: '14px' }}>
                   {item.endTime}
                 </div>
               )}
@@ -88,13 +97,13 @@ export default function DailyAgenda({
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 fontSize: 13, fontWeight: 600, color: '#0A254F',
-                lineHeight: '18px', marginBottom: 2,
+                lineHeight: '18px', marginBottom: 1,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {item.title}
               </div>
               <div style={{
-                fontSize: 12, color: '#7B8DA5',
+                fontSize: 11, color: '#7B8DA5',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {item.subtitle}

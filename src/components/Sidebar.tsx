@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -7,6 +8,7 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
+import Toast from './Toast'
 
 type NavItem = {
   label: string
@@ -28,6 +30,12 @@ const DASHBOARD_SUBPATHS = new Set(['/deadlines', '/updates'])
 export default function Sidebar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const [signOutToast, setSignOutToast] = useState(false)
+
+  function handleSignOut() {
+    setSignOutToast(true)
+    setTimeout(() => setSignOutToast(false), 2500)
+  }
 
   // Resolve which top-level nav entry should appear active
   const activePath = DASHBOARD_SUBPATHS.has(pathname) ? '/dashboard' : pathname
@@ -90,7 +98,7 @@ export default function Sidebar() {
       <div className="mt-auto px-5 pb-8">
         <div className="border-t border-[#EEF2F7] mb-4" />
         <button
-          onClick={() => alert('Sign out is not available in this prototype.')}
+          onClick={handleSignOut}
           className="flex items-center gap-3 w-full px-4 rounded-[12px] text-[#7B8DA5] hover:bg-[#FFF5F5] hover:text-[#EF4444] text-[15px] font-medium transition-all duration-150"
           style={{ height: 46 }}
         >
@@ -98,6 +106,7 @@ export default function Sidebar() {
           Sign out
         </button>
       </div>
+      <Toast message="Sign out is not available in this prototype" visible={signOutToast} />
     </aside>
   )
 }

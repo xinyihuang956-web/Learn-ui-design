@@ -96,7 +96,7 @@ export default function Settings() {
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto min-w-0">
-        <div className="w-full max-w-[1280px] mx-auto" style={{ padding: '32px 40px 48px' }}>
+        <div className="w-full max-w-[1280px] mx-auto" style={{ padding: '28px 32px 40px' }}>
 
           <h1 style={{ fontSize: 34, fontWeight: 700, color: '#0A254F', letterSpacing: '-0.02em', marginBottom: 28 }}>Settings</h1>
 
