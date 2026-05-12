@@ -47,11 +47,11 @@ const upcoming = [
 // ─── Calendar data ────────────────────────────────────────────────────────────
 
 const calendarWeeks = [
-  [null, null, null, 1, 2, 3, 4],
-  [5, 6, 7, 8, 9, 10, 11],
-  [12, 13, 14, 15, 16, 17, 18],
-  [19, 20, 21, 22, 23, 24, 25],
-  [26, 27, 28, 29, 30, 31, null],
+  [null, null, null, null, 1, 2, 3],
+  [4, 5, 6, 7, 8, 9, 10],
+  [11, 12, 13, 14, 15, 16, 17],
+  [18, 19, 20, 21, 22, 23, 24],
+  [25, 26, 27, 28, 29, 30, 31],
 ]
 
 const BASE_DOTS: Record<number, string> = {
@@ -263,10 +263,7 @@ export default function Dashboard() {
     ...(extraItems[selectedDate] ?? []),
   ]
 
-  const monthDayLabel = (d: number) => {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    return `${d} ${months[4]}` // May
-  }
+  const monthDayLabel = (d: number) => `${d} May 2026`
 
   function handleAddTodo(item: DailyAgendaItem, date: number) {
     setExtraItems(prev => ({ ...prev, [date]: [...(prev[date] ?? []), item] }))
@@ -381,10 +378,10 @@ export default function Dashboard() {
       </div>
 
       {/* Right Sidebar */}
-      <aside className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4" style={{ width: 310, padding: '24px 16px', overflowY: 'auto' }}>
+      <aside className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4" style={{ width: 320, padding: '24px 16px', overflowY: 'auto' }}>
 
         <MiniCalendar
-          monthLabel="May 2025"
+          monthLabel="May 2026"
           weeks={calendarWeeks}
           selectedDate={selectedDate}
           eventDots={dots}

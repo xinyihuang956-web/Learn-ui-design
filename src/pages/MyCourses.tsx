@@ -440,7 +440,7 @@ export default function MyCourses() {
       {/* ── Right sidebar: fixed, never scrolls ── */}
       <aside
         className="flex-shrink-0 border-l border-[#E6ECF3] bg-[#F7F9FC] flex flex-col gap-4 overflow-y-auto"
-        style={{ width: 300, padding: '24px 16px' }}
+        style={{ width: 320, padding: '24px 16px' }}
       >
         {/* Today */}
         <Card>

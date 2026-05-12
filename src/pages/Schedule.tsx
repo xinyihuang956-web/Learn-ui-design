@@ -55,13 +55,13 @@ const START_HOUR = 8
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 
 const DAYS = [
-  { name: 'Mon', date: 13 },
-  { name: 'Tue', date: 14 },
-  { name: 'Wed', date: 15 },
-  { name: 'Thu', date: 16 },
-  { name: 'Fri', date: 17 },
-  { name: 'Sat', date: 18 },
-  { name: 'Sun', date: 19 },
+  { name: 'Mon', date: 11 },
+  { name: 'Tue', date: 12 },
+  { name: 'Wed', date: 13 },
+  { name: 'Thu', date: 14 },
+  { name: 'Fri', date: 15 },
+  { name: 'Sat', date: 16 },
+  { name: 'Sun', date: 17 },
 ]
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -111,31 +111,31 @@ const INITIAL_EVENTS: TEvent[] = [
 ]
 
 const AGENDA_BY_DAY: Record<number, AgendaItem[]> = {
-  13: [
+  11: [
     { id: 'ag-m1', time: '09:00–10:00', title: 'Molecular Biology Lecture', location: 'David Hume 2.12',    type: 'Class',   route: '/courses/molecular-biology' },
     { id: 'ag-m2', time: '11:00–12:00', title: 'Sociology Seminar',         location: 'Appleton Tower 1.05', type: 'Seminar', route: '/courses/sociology' },
     { id: 'ag-m3', time: '15:00–16:00', title: 'Review seminar notes',      location: '',                    type: 'Task' },
   ],
-  14: [
+  12: [
     { id: 'ag-t1', time: '13:00–14:30', title: 'Marketing Group Meeting', location: 'Online',         type: 'Meeting'  },
     { id: 'ag-t2', time: '17:30–18:30', title: 'Personal gym session',    location: 'Pleasance Gym',  type: 'Personal' },
   ],
-  15: [
+  13: [
     { id: 'ag-w1', time: '09:00–10:00', title: 'Molecular Biology Lecture', location: 'David Hume 2.12',    type: 'Class',    route: '/courses/molecular-biology' },
     { id: 'ag-w2', time: '14:00',       title: 'Lab Report Deadline',       location: 'LEARN Assignment',    type: 'Deadline', route: '/courses/molecular-biology/assignments/lab-report-2-enzyme-kinetics' },
     { id: 'ag-w3', time: '15:00–16:00', title: 'Sociology Seminar',         location: 'Appleton Tower 1.05', type: 'Seminar',  route: '/courses/sociology' },
     { id: 'ag-w4', time: '17:30–18:30', title: 'Personal gym session',      location: 'Pleasance Gym',       type: 'Personal' },
   ],
-  16: [
+  14: [
     { id: 'ag-th1', time: '10:00–12:00', title: 'Project Workshop',    location: 'George Square G.03',  type: 'Workshop' },
     { id: 'ag-th2', time: '15:00–16:00', title: 'Sociology Seminar',   location: 'Appleton Tower 1.05', type: 'Seminar', route: '/courses/sociology' },
   ],
-  17: [
+  15: [
     { id: 'ag-f1', time: '11:00–11:30', title: 'Library return',             location: 'Main Library',    type: 'Personal' },
     { id: 'ag-f2', time: '14:00–15:00', title: 'Molecular Biology Tutorial', location: 'David Hume 1.11', type: 'Class',   route: '/courses/molecular-biology' },
     { id: 'ag-f3', time: '16:30–17:30', title: 'Marketing Group Meeting',    location: 'Online',          type: 'Meeting'  },
   ],
-  19: [
+  17: [
     { id: 'ag-su1', time: '18:00–19:00', title: 'Personal gym session', location: 'Pleasance Gym', type: 'Personal' },
   ],
 }
@@ -152,10 +152,10 @@ function buildWeeks(startOffset: number, daysInMonth: number): (number | null)[]
   return weeks
 }
 
-const SCHEDULE_CAL_WEEKS = buildWeeks(2, 31)
+const SCHEDULE_CAL_WEEKS = buildWeeks(4, 31) // May 2026 starts Friday
 const SCHEDULE_CAL_DOTS: Record<number, string> = {
-  13: '#2563EB', 14: '#F97316', 15: '#2563EB',
-  16: '#EF4444', 17: '#1F9D55',
+  11: '#2563EB', 12: '#F97316', 13: '#2563EB',
+  14: '#EF4444', 15: '#1F9D55',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ function dateToDay(dateStr: string): number {
   const d = new Date(dateStr + 'T00:00:00')
   if (d.getMonth() !== 4) return -1
   const n = d.getDate()
-  return n >= 13 && n <= 19 ? n - 13 : -1
+  return n >= 11 && n <= 17 ? n - 11 : -1
 }
 
 function genId() {
@@ -462,7 +462,7 @@ function DayView({ events, selectedCalDate, onNavigate, onOpen }: { events: TEve
 
 // ─── MonthView ────────────────────────────────────────────────────────────────
 
-const MONTH_WEEKS = buildWeeks(2, 31) // May 2024 starts Wednesday (offset 2)
+const MONTH_WEEKS = buildWeeks(4, 31) // May 2026 starts Friday (offset 4)
 
 function MonthView({ events, selectedCalDate }: { events: TEvent[]; selectedCalDate: number }) {
   const eventsByDay: Record<number, TEvent[]> = {}
@@ -485,7 +485,7 @@ function MonthView({ events, selectedCalDate }: { events: TEvent[]; selectedCalD
       {MONTH_WEEKS.map((week, wi) => (
         <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: wi < MONTH_WEEKS.length - 1 ? '1px solid #EEF2F7' : 'none' }}>
           {week.map((date, di) => {
-            const dayIdx = date ? date - 13 : -1
+            const dayIdx = date ? date - 11 : -1
             const dayEvs = dayIdx >= 0 && dayIdx <= 6 ? eventsByDay[dayIdx] || [] : []
             const isSel = date === selectedCalDate
             return (
@@ -568,7 +568,7 @@ interface ModalProps {
 }
 
 function AddItemModal({ defaultDate, onClose, onAdd }: ModalProps) {
-  const dateStr = `2024-05-${String(defaultDate).padStart(2, '0')}`
+  const dateStr = `2026-05-${String(defaultDate).padStart(2, '0')}`
   const [form, setForm] = useState<FormState>({
     title: '', type: 'Class', date: dateStr,
     startTime: '10:00', endTime: '11:00',
@@ -720,7 +720,7 @@ export default function Schedule() {
   const [view, setView] = useState<ViewMode>('Week')
   const [activeFilter, setActiveFilter] = useState<string>('All')
   const [selectedEvent, setSelectedEvent] = useState<TEvent | null>(null)
-  const [selectedCalDate, setSelectedCalDate] = useState(15)
+  const [selectedCalDate, setSelectedCalDate] = useState(14)
   const [selectedAgendaItem, setSelectedAgendaItem] = useState<AgendaItem | null>(null)
   const [toast, setToast] = useState(false)
 
@@ -793,7 +793,7 @@ export default function Schedule() {
             </div>
 
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#0A254F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              {view === 'Day' ? `${selectedCalDate} May, 2024` : view === 'Month' ? 'May 2024' : 'May 13 – 19, 2024'}
+              {view === 'Day' ? `${selectedCalDate} May, 2026` : view === 'Month' ? 'May 2026' : 'May 11 – 17, 2026'}
               <ChevronDown size={13} strokeWidth={1.75} color="#7B8DA5" />
             </button>
 
@@ -835,15 +835,15 @@ export default function Schedule() {
       {/* Right sidebar */}
       <div style={{ width: 320, flexShrink: 0, borderLeft: '1px solid #E6ECF3', background: '#F7F9FC', padding: '24px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <MiniCalendarShared
-          monthLabel="May 2024"
+          monthLabel="May 2026"
           weeks={SCHEDULE_CAL_WEEKS}
           selectedDate={selectedCalDate}
           eventDots={SCHEDULE_CAL_DOTS}
           onDateSelect={setSelectedCalDate}
         />
         <DailyAgendaShared
-          dateLabel={`${selectedCalDate} May Agenda`}
-          showTodayBadge={selectedCalDate === 15}
+          dateLabel={`${selectedCalDate} May 2026 Agenda`}
+          showTodayBadge={selectedCalDate === 14}
           items={toSharedItems(currentAgenda)}
           onItemClick={handleAgendaClick}
           bottomAction={
